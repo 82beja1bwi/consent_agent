@@ -1,41 +1,8 @@
-//import Consent from './models/consent';
+import Contract from './domain/models/contract.js';
+import Consent from './domain/models/contract.js';
+import {getContract, setContract} from './storage/contracts_repository.js'
 
-class Consent {
-    constructor(analytics, marketing, personalizedContent, personalizedAds, externalContent, identification) {
-        this.analytics = analytics;
-        this.marketing = marketing;
-        this.personalizedContent = personalizedContent;
-        this.personalizedAds = personalizedAds;
-        this.externalContent = externalContent;
-        this.identification = identification;
-    }
-}
 
-class Contract {
-    constructor(baseURL, consent, cost, content) {
-        this.baseURL = baseURL; //domain of website
-        this.consent = consent; //of class Consent
-        this.cost = cost; //
-        this.content = content;
-    }
-}
-
-//CONTRACT REPOSITORY
-const contracts = {};
-
-function getContract(baseURL) {
-    return contracts[baseURL] || null;
-}
-
-function setContract(baseURL, contract) {
-    if (contract instanceof Contract) {
-        contracts[baseURL] = contract;
-        console.log("Contract stored for ", contract.baseURL)
-    }
-
-}
-
-//INTERCEPTOR
 async function getBaseURL() {
     try {
         const tabs = await browser.tabs.query({ active: true, currentWindow: true });
@@ -72,7 +39,7 @@ browser.webRequest.onBeforeSendHeaders.addListener(
                     name: "X-Custom-Header",
                     value: "HelloImTheClientsAgent"
                 });
-                console.log("header interecepted and modified")
+                console.log("header intercepted and modified")
 
             } else {
                 console.log("Contract found:", contract);
@@ -90,17 +57,32 @@ browser.webRequest.onBeforeSendHeaders.addListener(
     ["blocking", "requestHeaders"]
 );
 
-// Event listener for intercepting HTTP responses
-browser.webRequest.onCompleted.addListener(
+// Event listener for ADPC Header in responses
+browser.webRequest.onHeadersReceived.addListener(
     function(details) {
         // Check if the request was successful
         if (details.statusCode === 200) {
             // Access the response headers
             var responseHeaders = details.responseHeaders;
-            // Process the response headers as needed
-            console.log("Response headers:", responseHeaders);
+            const header = responseHeaders.find(header => header.name.toLowerCase() === 'x-custom');
+            if(header){
+                //Now this agent has to prepare a response
+                const value = header.value;
+                console.log("received custom header: ", value)
+                //TODO: calculate response
+                //TODO: send response                
+                const headers = {
+                    'X-New-Header': 'Your-Value'
+                };
+                const url = new URL(details.url, details.originUrl);
+                console.log("Request URL:", url.href);
+                
+                // Send the new HTTP request
+                fetch(url, { headers });
+            }
+            
         }
     },
     { urls: ["<all_urls>"] }, // Intercept all URLs
-    []
+    ["responseHeaders"] 
 );

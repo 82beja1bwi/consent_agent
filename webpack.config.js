@@ -6,7 +6,7 @@ import HtmlWebpackPlugin from 'html-webpack-plugin';
 export default {
   mode: 'development', // or 'production' for production mode
   devtool: 'source-map',
-  entry: { background: './background/interceptor.js', }, // Entry point of your background script
+  entry: { background: './src/background/background.js', }, // Entry point of your background script
   output: {
     path: path.resolve('dist'), // Output directory
     filename: '[name].js', // Output filename
