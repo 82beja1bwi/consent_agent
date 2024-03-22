@@ -9,8 +9,8 @@ export default class ScoredPreferences {
         return btoa(JSON.stringify(this));
     }
 
-    static fromJSON(json) {
-        const data = JSON.parse(json)
+    static fromBase64EncodedJSON(json) {
+        const data = JSON.parse(atob(json))
         return new ScoredPreferences(
             data.cost,
             data.consent,

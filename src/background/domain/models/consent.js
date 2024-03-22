@@ -42,4 +42,42 @@ export default class Consent {
 
         return string.trimEnd()
     }
+
+    //create instance from consent string (s. header)
+    //example string: 'rejectAll acceptAll analytics marketing personalizedContent personalizedAds externalContent identification'
+    static fromString(string){
+        // Split the string into individual words
+        const options = string.split(' ');
+
+        // Map each word to its corresponding boolean value
+        const consent = {
+            'rejectAll': false,
+            'acceptAll': false,
+            'analytics': false,
+            'marketing': false,
+            'personalizedContent': false,
+            'personalizedAds': false,
+            'externalContent': false,
+            'identification': false
+        };
+
+        // Set the boolean values based on the words in the string
+        options.forEach(word => {
+            if (consent.hasOwnProperty(word)) {
+                consent[word] = true;
+            }
+        });
+
+        // Return a new instance of Consent with the boolean values
+        return new Consent(
+            consent.rejectAll,
+            consent.acceptAll,
+            consent.analytics,
+            consent.marketing,
+            consent.personalizedContent,
+            consent.personalizedAds,
+            consent.externalContent,
+            consent.identification
+        );
+    }
 }

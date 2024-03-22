@@ -38,11 +38,11 @@ describe('ScoredPreferences', () => {
         });
     });
     describe('fromJSON', () => {
-        test('should create an instance of ScoredPreferences from JSON data', () => {
+        test('should create an instance of ScoredPreferences from base64 encoded JSON data', () => {
             // Sample JSON data representing preferences
             const jsonData = '{"cost": 5, "consent": {"rejectAll": false, "acceptAll": true, "analytics": true, "marketing": false, "personalizedContent": true, "personalizedAds": false, "externalContent": true, "identification": true}, "content": 50}'
             // Call the fromJSON method to create an instance from JSON data
-            const preferences = ScoredPreferences.fromJSON(jsonData);
+            const preferences = ScoredPreferences.fromBase64EncodedJSON(btoa(jsonData));
 
             // Verify that the instance is created with the correct properties
             expect(preferences.cost).toBe(5);

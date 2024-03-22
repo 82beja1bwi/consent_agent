@@ -17,8 +17,8 @@ export default class ScoredConsentPreferences {
     }
     */
 
-    static fromJSON(json) {
-        const data = JSON.parse(json);
+    static fromBase64EncodedJSON(json) {
+        const data = JSON.parse(atob(json));
         return new ScoredConsentPreferences(
             data.rejectAll,
             data.acceptAll,
