@@ -1,8 +1,19 @@
+// eslint-disable-next-line no-unused-vars
+import Consent from './consent.js'
+
 export default class Contract {
-    constructor(baseURL, consent, cost, content) {
-        this.baseURL = baseURL; //domain of website
-        this.consent = consent; //of class Consent
-        this.cost = cost; //
-        this.content = content;
-    }
+  /**
+       * Create a new Contract instance.
+       * @constructor
+       * @param {string} baseURL - the sites main domain without.
+       * @param {Consent} consent
+       * @param {number} cost
+       * @param {number} content
+       */
+  constructor (baseURL, consent, cost, content) {
+    this.baseURL = baseURL
+    this.consent = consent
+    this.cost = cost
+    this.content = content
+  }
 }
