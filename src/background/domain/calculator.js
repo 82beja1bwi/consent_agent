@@ -61,20 +61,55 @@ function calcProduct (
   )
 }
 
-function forBools (callback, bools) {
+/**
+ * combines all possible boolean values for the consent resolutions
+ * (analytics, analytics && marketing ... analytics && marketing && ... && personalizedAds)
+ * to calculate the score of each possible contract.
+ *
+ * @param {number} limit number of consent resolutions (e.g. 3 if only analytics, marketing and personalizedAds are requested by the site)
+ * @param {*} bools an empty list, which will be filled and emptied during the recursions
+ * @param {*} sitesContentPreference site's preference score for the current content resolution
+ * @param {*} usersContentPreference user's preference score for the current content resolution
+ * @param {*} result A return object to be filled
+ * @returns an object with a highscore of the best contract and the best contract
+ */
+function forBools2 (limit, bools, sitesContentPreference, usersContentPreference, result) {
+  if (limit === 0) {
+    const product = calcProduct(
+      bools[0],
+      bools[1],
+      bools[2],
+      bools[3],
+      sitesContentPreference,
+      usersContentPreference
+    )
+    if (product > result.highscore) {
+      result.highscore = product
+      result.bestContract = [...bools, 1]
+    }
+    return
+  }
+
+  limit--
+
   for (const bool of [false, true]) {
     bools.push(bool)
-    console.log('bools added', bools)
-    callback(bools)
+    forBools2(
+      limit,
+      bools,
+      sitesContentPreference,
+      usersContentPreference,
+      result
+    )
     bools.pop(bool)
-    console.log('bools removed', bools)
   }
 }
-// analytics: true, false
-// marketing: true, false
 
-function calcNashContract (usersScoredPreferences, sitesScoredPreferences) {
-  // -- MOCK DATA --
+// TODO
+// 2C vs 3C
+// actual data formats are used
+export function calcNashContract (usersScoredPreferences, sitesScoredPreferences) {
+  // MOCK DATA -->
   const sitesContentPreferences = new Map([
     [100, 1],
     [80, 0.7]
@@ -84,70 +119,19 @@ function calcNashContract (usersScoredPreferences, sitesScoredPreferences) {
     [100, 1],
     [80, 0.9]
   ])
-  // -- MOCK DATA --
+  // <-- MOCK DATA
 
-  // List of boolean variables
-  const bools = [false, true]
-
-  let highscore = 0
-  let bestContract
+  const result = { highscore: 0, bestContract: null }
 
   const booleans = []
 
-  forBools(function () {
-    forBools(function () {
-      forBools(function () {
-        forBools(function () {
-          const product = calcProduct(
-            booleans[0],
-            booleans[1],
-            booleans[2],
-            booleans[3],
-            1, // FAKE sites content pref
-            0.9 // FAKE users content pref
-          )
-          if (product > highscore) {
-            highscore = product
-            bestContract = [...booleans, 1]
-          }
-        }, booleans)
-      }, booleans)
-    }, booleans)
-  }, booleans)
+  for (const [key, value] of sitesContentPreferences.entries()) {
+    // a recursive function to produce as many bools as needed to fill the negotiated consent resolutions
+    forBools2(4, booleans, value, usersContentPreferences.get(key), result)
+  }
 
-  /* for (const [key, value] of sitesContentPreferences.entries()) {
-    for (const boolA of bools) {
-      for (const boolB of bools) {
-        for (const boolC of bools) {
-          for (const boolD of bools) {
-             console.log(
-              boolA,
-              boolB,
-              boolC,
-              boolD,
-              value,
-              usersContentPreferences.get(key)
-            )
-            const product = calcProduct(
-              boolA,
-              boolB,
-              boolC,
-              boolD,
-              value,
-              usersContentPreferences.get(key)
-            )
-            // console.log(product)
-            if (product > highscore) {
-              highscore = product
-              bestContract = { boolA, boolB, boolC, boolD, key }
-            }
-          }
-        }
-      }
-    }
-  } */
-  console.log('hihgscore ', highscore)
-  console.log(bestContract)
+  console.log('hihgscore ', result.highscore)
+  console.log(result.bestContract)
 }
 
 calcNashContract()
