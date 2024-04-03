@@ -1,15 +1,26 @@
 import Contract from './domain/models/contract.js'
-import Consent from './domain/models/consent.js'
 import Header, { NegotiationStatus } from './domain/models/header.js'
-import { getContract, setContract } from './storage/contracts_repository.js'
+import ContractRepository from './storage/contracts_repository.js'
+import Negotiator from './domain/negotiator.js'
+import Calculator from './domain/calculator.js'
+import PreferenceManager from './domain/preference_manager.js'
+import PreferencesRepository from './storage/preferences_repository.js'
 
+const negotiator = new Negotiator(new Calculator())
+const contractRepository = new ContractRepository()
+const preferenceManager = new PreferenceManager(new PreferencesRepository())
+
+/**
+ * helper method
+ * instead of www.google.com/.../... return google.com
+ * @returns base url of domain
+ */
 async function getDomainURL () {
   // eslint-disable-next-line no-undef
   const tabs = await browser.tabs.query({ active: true, currentWindow: true })
   const currentTab = tabs[0]
   const currentUrl = new URL(currentTab.url)
-  const domainURL = currentUrl.origin
-  return domainURL
+  return currentUrl.hostname
 }
 
 /**
@@ -21,6 +32,7 @@ browser.runtime.onInstalled.addListener(function (details) {
   if (details.reason === 'install') {
     // Perform database initialization tasks
     // initializeDatabase();
+
   }
 })
 
@@ -31,27 +43,32 @@ browser.webRequest.onBeforeSendHeaders.addListener(
     try {
       // IF no agreement exists, THEN should start negotiation
       // consequence: user clicks around in domain and negotiation will only be started once
-      const domainURL = await getDomainURL()
-      console.log('Domain URL:', domainURL)
-      const contract = getContract(domainURL)
-      const contractExists = contract != null
-      if (!contractExists) {
-        console.log('No contract found for domain URL:', domainURL)
-        // TODO: Praeferenzen laden
-        //
-        // Contract is initiated
-        setContract(domainURL, new Contract(domainURL, new Consent(false, false, false, false, false, false), 0, 100))
-        console.log('Initiated contract')
-        // TODO: construct initial header
+      const hostName = await getDomainURL()
+      const contract = contractRepository.getContract(hostName)
+
+      if (!contract) {
+        console.log('No contract found for host:', hostName)
+        // Construct initial header
+        const header = negotiator.prepareInitialOffer()
+
+        // Set up and store initial contract
+        contractRepository.setContract(
+          hostName,
+          new Contract(hostName, header.consent, null, null)
+        )
+        // init the users preferences
+        header.preferences = preferenceManager.initUsersPreferences(hostName)
+
         details.requestHeaders.push({
-          name: 'X-Custom-Header',
-          value: 'HelloImTheClientsAgent'
+          name: 'ADPC',
+          value: header.toString()
         })
-        console.log('header intercepted and modified')
+        console.log('header intercepted and modified: ', header.toString())
       } else {
         console.log('Contract found:', contract)
       }
 
+      // Continue any request to its receiver
       return { requestHeaders: details.requestHeaders }
     } catch (error) {
       console.error('An error occurred:', error)

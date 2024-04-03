@@ -4,8 +4,6 @@ export default class ScoredConsentPreferences {
      * Each variable has a number, the preference score.
      *
      * @constructor
-     * @param {number} rejectAll
-     * @param {number} acceptAll
      * @param {number} analytics
      * @param {number} marketing
      * @param {number} personalizedContent
@@ -13,9 +11,7 @@ export default class ScoredConsentPreferences {
      * @param {number} externalContent
      * @param {number} identification
      */
-  constructor (rejectAll, acceptAll, analytics, marketing, personalizedContent, personalizedAds, externalContent, identification) {
-    this.rejectAll = rejectAll
-    this.acceptAll = acceptAll
+  constructor (analytics, marketing, personalizedContent, personalizedAds, externalContent, identification) {
     this.analytics = analytics
     this.marketing = marketing
     this.personalizedContent = personalizedContent
@@ -33,8 +29,6 @@ export default class ScoredConsentPreferences {
   static fromBase64EncodedJSON (json) {
     const data = JSON.parse(atob(json))
     return new ScoredConsentPreferences(
-      data.rejectAll,
-      data.acceptAll,
       data.analytics,
       data.marketing,
       data.personalizedContent,

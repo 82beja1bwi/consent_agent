@@ -1,23 +1,21 @@
-import path from 'path';
-import CopyWebpackPlugin from 'copy-webpack-plugin';
-import HtmlWebpackPlugin from 'html-webpack-plugin';
-
+import path from 'path'
+import CopyWebpackPlugin from 'copy-webpack-plugin'
 
 export default {
   mode: 'development', // or 'production' for production mode
   devtool: 'source-map',
-  entry: { background: './src/background/background.js', }, // Entry point of your background script
+  entry: { background: './src/background/background.js' }, // Entry point of your background script
   output: {
     path: path.resolve('dist'), // Output directory
-    filename: '[name].js', // Output filename
+    filename: '[name].js' // Output filename
   },
   watch: true,
   plugins: [
     new CopyWebpackPlugin({
       patterns: [
-        {from: path.resolve('manifest.json'), to: path.resolve('dist')}
+        { from: path.resolve('manifest.json'), to: path.resolve('dist') }
       ]
-    }),
+    })
   ],
   module: {
     rules: [
@@ -27,10 +25,10 @@ export default {
         use: {
           loader: 'babel-loader', // Use babel-loader for transpiling JavaScript files
           options: {
-            presets: ['@babel/preset-env'], // Use @babel/preset-env preset for compiling ES6+ to ES5
-          },
-        },
-      },
-    ],
-  },
-};
+            presets: ['@babel/preset-env'] // Use @babel/preset-env preset for compiling ES6+ to ES5
+          }
+        }
+      }
+    ]
+  }
+}

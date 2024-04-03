@@ -1,1 +1,5 @@
-export default { transform: {} }
+export default {
+  transform: {
+    '^.+\\.jsx?$': 'babel-jest'
+  }
+}

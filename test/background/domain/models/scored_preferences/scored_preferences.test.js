@@ -1,72 +1,166 @@
-import ScoredPreferences from '../../../../../src/background/domain/models/scored_preferences/scored_preferences.js';
-import ScoredConsentPreferences from '../../../../../src/background/domain/models/scored_preferences/scored_consent_preferences.js';
+/* eslint-disable no-undef */
+import ScoredPreferences from '../../../../../src/background/domain/models/scored_preferences/scored_preferences.js'
 
 describe('ScoredPreferences', () => {
-    describe('toBase64EncodedString', () => {
-        test('should deserialize 2C preferences an instance to a base64 encoded JSON', () => {
-            const scoredPreferences = new ScoredPreferences({
-                100: 30,
-                80: 20,
-                50: 10
-            },
-                new ScoredConsentPreferences(40, 5, 10, 10, 10, 10, 10, 5),)
+  describe('toBase64EncodedString', () => {
+    test('should deserialize 2C preferences an instance to a base64 encoded JSON', () => {
+      const scoredPreferences = new ScoredPreferences()
 
+      scoredPreferences.consent = { relevance: 0.5, resolutions: { analytics: 1 } }
+      scoredPreferences.content = { relevance: 0.5, resolutions: { 100: 1 } }
 
-            const actual = scoredPreferences.toBase64EncodedJSON();
+      const actual = scoredPreferences.toBase64EncodedJSON()
 
-            expect(actual).toBe('eyJjb3N0Ijp7IjUwIjoxMCwiODAiOjIwLCIxMDAiOjMwfSwiY29uc2VudCI6eyJyZWplY3RBbGwiOjQwLCJhY2NlcHRBbGwiOjUsImFuYWx5dGljcyI6MTAsIm1hcmtldGluZyI6MTAsInBlcnNvbmFsaXplZENvbnRlbnQiOjEwLCJwZXJzb25hbGl6ZWRBZHMiOjEwLCJleHRlcm5hbENvbnRlbnQiOjEwLCJpZGVudGlmaWNhdGlvbiI6NX19')
-            expect(atob(actual)).toBe('{"cost":{"50":10,"80":20,"100":30},"consent":{"rejectAll":40,"acceptAll":5,"analytics":10,"marketing":10,"personalizedContent":10,"personalizedAds":10,"externalContent":10,"identification":5}}')
-        });
-        test('should deserialize 3C preferences an instance to a base64 encoded JSON', () => {
-            const scoredPreferences = new ScoredPreferences({
-                100: 30,
-                80: 20,
-                50: 10
-            },
-                new ScoredConsentPreferences(40, 5, 10, 10, 10, 10, 10, 5),
-                {
-                    '2.99': 20,
-                    '5.49': 10,
-                    '7.19': 5
-                },)
+      expect(atob(actual)).toBe('{"cost":{},"consent":{"relevance":0.5,"resolutions":{"analytics":1}},"content":{"relevance":0.5,"resolutions":{"100":1}}}')
+    })
+  })
+  describe('fromJSON', () => {
+    test('should create an instance of ScoredPreferences from base64 encoded JSON data', () => {
+      // Sample JSON data representing preferences
+      const input = {
+        cost: {
+          relevance: 0.4,
+          resolutions: {
+            5: 1,
+            2: 0.7
+          }
+        },
+        consent: {
+          relevance: 0.3,
+          resolutions: {
+            analytics: 0.5,
+            marketing: 0.5
+          }
+        },
+        content: {
+          relevance: 0.3,
+          resolutions: {
+            100: 1,
+            70: 0.8
+          }
+        }
+      }
+      // Call the fromJSON method to create an instance from JSON data
+      const preferences = ScoredPreferences.fromBase64EncodedJSON(btoa(JSON.stringify(input)))
 
+      // Verify that the instance is created with the correct properties
+      expect(preferences).toEqual(input)
+    })
+    test('should create an instance of ScoredPreferences from base64 encoded JSON data', () => {
+      // Sample JSON data representing preferences
+      const input = {
+        cost: {
+          relevance: 0.4,
+          resolutions: {
+            5: 1,
+            2: 0.7
+          }
+        },
+        consent: {
+          relevance: 0.3,
+          resolutions: {
+            analytics: 0.5,
+            marketing: 0.5
+          }
+        },
+        content: {
+          relevance: 0.3,
+          resolutions: {
+            100: 1,
+            70: 0.8
+          }
+        }
+      }
+      // Call the fromJSON method to create an instance from JSON data
+      const preferences = ScoredPreferences.fromBase64EncodedJSON(
+        btoa(JSON.stringify(input))
+      )
 
-            const actual = scoredPreferences.toBase64EncodedJSON();
+      // Verify that the instance is created with the correct properties
+      expect(preferences).toEqual(input)
+    })
+    test('should throw Error for invalid issue', () => {
+      // Sample JSON data representing preferences
+      const input = {
+        invalidIssue: {
+          relevance: 0.4,
+          resolutions: {
+            5: 1,
+            2: 0.7
+          }
 
-            expect(actual).toBe('eyJjb3N0Ijp7IjUwIjoxMCwiODAiOjIwLCIxMDAiOjMwfSwiY29uc2VudCI6eyJyZWplY3RBbGwiOjQwLCJhY2NlcHRBbGwiOjUsImFuYWx5dGljcyI6MTAsIm1hcmtldGluZyI6MTAsInBlcnNvbmFsaXplZENvbnRlbnQiOjEwLCJwZXJzb25hbGl6ZWRBZHMiOjEwLCJleHRlcm5hbENvbnRlbnQiOjEwLCJpZGVudGlmaWNhdGlvbiI6NX0sImNvbnRlbnQiOnsiMi45OSI6MjAsIjUuNDkiOjEwLCI3LjE5Ijo1fX0=')
-            expect(atob(actual)).toBe('{"cost":{"50":10,"80":20,"100":30},"consent":{"rejectAll":40,"acceptAll":5,"analytics":10,"marketing":10,"personalizedContent":10,"personalizedAds":10,"externalContent":10,"identification":5},"content":{"2.99":20,"5.49":10,"7.19":5}}')
-        });
-    });
-    describe('fromJSON', () => {
-        test('should create an instance of ScoredPreferences from base64 encoded JSON data', () => {
-            // Sample JSON data representing preferences
-            const jsonData = '{"cost": 5, "consent": {"rejectAll": false, "acceptAll": true, "analytics": true, "marketing": false, "personalizedContent": true, "personalizedAds": false, "externalContent": true, "identification": true}, "content": 50}'
-            // Call the fromJSON method to create an instance from JSON data
-            const preferences = ScoredPreferences.fromBase64EncodedJSON(btoa(jsonData));
+        }
+      }
 
-            // Verify that the instance is created with the correct properties
-            expect(preferences.cost).toBe(5);
-            expect(preferences.content).toBe(50);
-            expect(preferences.consent.rejectAll).toBe(false);
-            expect(preferences.consent.acceptAll).toBe(true);
-            expect(preferences.consent.analytics).toBe(true);
-            expect(preferences.consent.analytics).toBe(true);
-            expect(preferences.consent.marketing).toBe(false);
-            expect(preferences.consent.personalizedContent).toBe(true);
-            expect(preferences.consent.personalizedAds).toBe(false);
-            expect(preferences.consent.externalContent).toBe(true);
-            expect(preferences.consent.identification).toBe(true);
-        });
+      expect(() => {
+        ScoredPreferences.fromBase64EncodedJSON(btoa(JSON.stringify(input)))
+      }).toThrow(Error)
+    })
 
-        test('should throw an error for invalid JSON data', () => {
-            // Invalid JSON data
-            /* const invalidJsonData = 'invalid JSON';
- 
+    test('should throw Error for invalid issue', () => {
+      // Sample JSON data representing preferences
+      const input = {
+
+      }
+
+      expect(() => {
+        ScoredPreferences.fromBase64EncodedJSON(btoa(JSON.stringify(input)))
+      }).toThrow(Error)
+    })
+
+    test('Accepts preferences with only consent and content', () => {
+      // Sample JSON data representing preferences
+      const input = {
+        consent: {
+          relevance: 0.7,
+          resolutions: {
+            analytics: 0.5,
+            marketing: 0.5
+          }
+        },
+        content: {
+          relevance: 0.3,
+          resolutions: {
+            100: 1,
+            70: 0.8
+          }
+        }
+      }
+
+      // Call the fromJSON method to create an instance from JSON data
+      const preferences = ScoredPreferences.fromBase64EncodedJSON(
+        btoa(JSON.stringify(input))
+      )
+
+      // Verify that the instance is created with the correct properties
+      expect(preferences).toEqual({
+        cost: {},
+        consent: {
+          relevance: 0.7,
+          resolutions: {
+            analytics: 0.5,
+            marketing: 0.5
+          }
+        },
+        content: {
+          relevance: 0.3,
+          resolutions: {
+            100: 1,
+            70: 0.8
+          }
+        }
+      })
+    })
+
+    test('should throw an error for invalid JSON data', () => {
+      // Invalid JSON data
+      /* const invalidJsonData = 'invalid JSON';
+
              // Call the fromJSON method with invalid JSON data
              const createInstance = () => ScoredConsentPreferences.fromJSON(invalidJsonData);
- 
+
              // Verify that it throws an error
-             expect(createInstance).toThrowError(SyntaxError);*/
-        });
-    });
-});
+             expect(createInstance).toThrowError(SyntaxError); */
+    })
+  })
+})

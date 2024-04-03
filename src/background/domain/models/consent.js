@@ -1,9 +1,14 @@
 /// Consent in bool
 /// Current state is bool = true
 export default class Consent {
-  constructor (rejectAll, acceptAll, analytics, marketing, personalizedContent, personalizedAds, externalContent, identification) {
-    this.rejectAll = rejectAll
-    this.acceptAll = acceptAll
+  constructor (
+    analytics,
+    marketing,
+    personalizedContent,
+    personalizedAds,
+    externalContent,
+    identification
+  ) {
     this.analytics = analytics
     this.marketing = marketing
     this.personalizedContent = personalizedContent
@@ -15,12 +20,6 @@ export default class Consent {
   toString () {
     let string = ''
 
-    if (this.rejectAll) {
-      string += 'rejectAll '
-    }
-    if (this.acceptAll) {
-      string += 'acceptAll '
-    }
     if (this.analytics) {
       string += 'analytics '
     }
@@ -51,8 +50,6 @@ export default class Consent {
 
     // Map each word to its corresponding boolean value
     const consent = {
-      rejectAll: false,
-      acceptAll: false,
       analytics: false,
       marketing: false,
       personalizedContent: false,
@@ -62,16 +59,14 @@ export default class Consent {
     }
 
     // Set the boolean values based on the words in the string
-    options.forEach(word => {
-      if (consent.hasOwnProperty(word)) {
+    options.forEach((word) => {
+      if (Object.prototype.hasOwnProperty.call(consent, word)) {
         consent[word] = true
       }
     })
 
     // Return a new instance of Consent with the boolean values
     return new Consent(
-      consent.rejectAll,
-      consent.acceptAll,
       consent.analytics,
       consent.marketing,
       consent.personalizedContent,
