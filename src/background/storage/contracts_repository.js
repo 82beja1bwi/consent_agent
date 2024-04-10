@@ -9,9 +9,9 @@ export default class ContractRepository {
     return this.contracts[hostname] || null
   }
 
-  setContract (hostname, contract) {
+  setContract (contract) {
     if (contract instanceof Contract) {
-      this.contracts[hostname] = contract
+      this.contracts[contract.hostName] = contract
       console.log('Contract stored for ', contract.hostName)
     }
   }

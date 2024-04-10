@@ -8,6 +8,20 @@ describe('Header', () => {
 
       expect(instance.toString()).toBe('analytics marketing personalizedContent personalizedAds externalContent identification')
     })
+
+    test('only true consent options are included in string', () => {
+      const instance = new Consent().setAnalytics(true)
+
+      expect(instance.toString()).toBe(
+        'analytics'
+      )
+    })
+
+    test('no consent returns empty string', () => {
+      const instance = new Consent()
+
+      expect(instance.toString()).toBe('')
+    })
   })
 
   describe('fromString', () => {
@@ -22,42 +36,42 @@ describe('Header', () => {
       const input = 'analytics'
       const actual = Consent.fromString(input)
 
-      expect(actual).toEqual(new Consent(true, false, false, false, false, false))
+      expect(actual).toEqual(new Consent().setAnalytics(true))
     })
 
     test('IF only marketing in string, THEN only marketing is true', () => {
       const input = 'marketing'
       const actual = Consent.fromString(input)
 
-      expect(actual).toEqual(new Consent(false, true, false, false, false, false))
+      expect(actual).toEqual(new Consent().setMarketing(true))
     })
 
     test('IF only personalizedContent in string, THEN only personalizedContent is true', () => {
       const input = 'personalizedContent'
       const actual = Consent.fromString(input)
 
-      expect(actual).toEqual(new Consent(false, false, true, false, false, false))
+      expect(actual).toEqual(new Consent().setPersonalizedContent(true))
     })
 
     test('IF only personalizedAds in string, THEN only personalizedAds is true', () => {
       const input = 'personalizedAds'
       const actual = Consent.fromString(input)
 
-      expect(actual).toEqual(new Consent(false, false, false, true, false, false))
+      expect(actual).toEqual(new Consent().setPersonalizedAds(true))
     })
 
     test('IF only externalContent in string, THEN only externalContent is true', () => {
       const input = 'externalContent'
       const actual = Consent.fromString(input)
 
-      expect(actual).toEqual(new Consent(false, false, false, false, true, false))
+      expect(actual).toEqual(new Consent().setExternalContent(true))
     })
 
     test('IF only identification in string, THEN only identification is true', () => {
       const input = 'identification'
       const actual = Consent.fromString(input)
 
-      expect(actual).toEqual(new Consent(false, false, false, false, false, true))
+      expect(actual).toEqual(new Consent().setIdentification(true))
     })
   })
 })

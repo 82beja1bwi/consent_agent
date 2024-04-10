@@ -1,17 +1,18 @@
 /* eslint-disable no-undef */
-import ScoredPreferences from '../../../../../src/background/domain/models/scored_preferences/scored_preferences.js'
+
+import ScoredPreferences, { Issue } from '../../../../src/background/domain/models/scored_preferences.js'
 
 describe('ScoredPreferences', () => {
   describe('toBase64EncodedString', () => {
     test('should deserialize 2C preferences an instance to a base64 encoded JSON', () => {
       const scoredPreferences = new ScoredPreferences()
 
-      scoredPreferences.consent = { relevance: 0.5, resolutions: { analytics: 1 } }
-      scoredPreferences.content = { relevance: 0.5, resolutions: { 100: 1 } }
+      scoredPreferences.setConsent(new Issue().setRelevance(0.5).setResolutions({ analytics: 1 }))
+      scoredPreferences.setContent(new Issue().setRelevance(0.5).setResolutions({ 100: 1 }))
 
       const actual = scoredPreferences.toBase64EncodedJSON()
 
-      expect(atob(actual)).toBe('{"cost":{},"consent":{"relevance":0.5,"resolutions":{"analytics":1}},"content":{"relevance":0.5,"resolutions":{"100":1}}}')
+      expect(atob(actual)).toBe('{"consent":{"relevance":0.5,"resolutions":{"analytics":1}},"content":{"relevance":0.5,"resolutions":{"100":1}}}')
     })
   })
   describe('fromJSON', () => {
@@ -46,6 +47,7 @@ describe('ScoredPreferences', () => {
       // Verify that the instance is created with the correct properties
       expect(preferences).toEqual(input)
     })
+
     test('should create an instance of ScoredPreferences from base64 encoded JSON data', () => {
       // Sample JSON data representing preferences
       const input = {
@@ -134,7 +136,7 @@ describe('ScoredPreferences', () => {
 
       // Verify that the instance is created with the correct properties
       expect(preferences).toEqual({
-        cost: {},
+        cost: new Issue(),
         consent: {
           relevance: 0.7,
           resolutions: {

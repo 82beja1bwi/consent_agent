@@ -7,17 +7,16 @@
     "activeTab",
     "webRequest",
     "webRequestBlocking",
-    "<all_urls>"
+    "<all_urls>",
+    "storage",
+    "tabs"
   ],
   "browser_action": {
     "default_title": "ConsentAgent",
-    "default_popup": "popup/overview.html"
+    "default_popup": "popup.html"
   },
-  "content_security_policy": "script-src 'self'; object-src 'self'",
   "background": {
-    "scripts": [
-      "background.js"
-    ],
+    "scripts": ["background.js"],
     "persistent": false,
     "type": "module"
   }

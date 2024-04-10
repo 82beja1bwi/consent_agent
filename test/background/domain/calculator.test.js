@@ -1,78 +1,35 @@
 import Calculator from '../../../src/background/domain/calculator'
 import Consent from '../../../src/background/domain/models/consent'
 import Header from '../../../src/background/domain/models/header'
-import ScoredPreferences from '../../../src/background/domain/models/scored_preferences/scored_preferences'
+import ScoredPreferences, { Issue } from '../../../src/background/domain/models/scored_preferences'
 
 /* eslint-disable no-undef */
 describe('Calculator', () => {
-  describe('initSitesScoringFunction', () => {
+  describe('calcSitesScoringFunction', () => {
     test('If wrong data model then throw Error', () => {
-      const scoredPreferences = {
-        consent: {
-          relevance: 0.4,
-          resolutions: {
-            analytics: 0.3,
-            marketing: 0.5,
-            personalizedAds: 0.2
-          }
-        },
-        content: {
-          relevance: 0.6,
-          resolutions: {
-            100: 1,
-            70: 0.6
-          }
-        }
-      }
+      const scoredPreferences = { }
       const cut = new Calculator()
       expect(() => {
-        cut.initSitesScoringFunction(scoredPreferences)
-      }).toThrow(Error)
+        cut.calcSitesScoringFunction(scoredPreferences)
+      }).toThrow(
+        new Error('Preferences must be in data model ScoredPreferences')
+      )
     })
-  })
-  describe('initUsersScoringFunction', () => {
-    test('If wrong data model then throw Error', () => {
-      const scoredPreferences = {
-        consent: {
-          relevance: 0.4,
-          resolutions: {
-            analytics: 0.3,
-            marketing: 0.5,
-            personalizedAds: 0.2
-          }
-        },
-        content: {
-          relevance: 0.6,
-          resolutions: {
-            100: 1,
-            70: 0.6
-          }
-        }
-      }
-      const cut = new Calculator()
-      expect(() => {
-        cut.initUsersScoringFunction(scoredPreferences)
-      }).toThrow(Error)
-    })
-  })
-  describe('_sitesScoringFunction', () => {
     test('if not enough bools provded, then throw error', () => {
       const scoredPreferences = new ScoredPreferences()
-      scoredPreferences.consent = {
-        relevance: 0.4,
-        resolutions: {
-          analytics: 0.3,
-          marketing: 0.5,
-          personalizedAds: 0.2
-        }
-      }
-      scoredPreferences.content = {
-        relevance: 0.6,
-        resolutions: {
-          100: 1,
-          70: 0.6
-        }
-      }
+        .setConsent(
+          new Issue().setRelevance(0.4).setResolutions({
+            analytics: 0.3,
+            marketing: 0.5,
+            personalizedAds: 0.2
+          })
+        )
+        .setContent(
+          new Issue().setRelevance(0.6).setResolutions({
+            100: 1,
+            70: 0.6
+          })
+        )
 
       const cut = new Calculator()
       const actual = cut.calcSitesScoringFunction(scoredPreferences)
@@ -84,53 +41,51 @@ describe('Calculator', () => {
 
     test('2C && site: prefernces (consent, content) should return respective function', () => {
       const scoredPreferences = new ScoredPreferences()
-      scoredPreferences.consent = {
-        relevance: 0.4,
-        resolutions: {
-          analytics: 0.3,
-          marketing: 0.5,
-          personalizedAds: 0.2
-        }
-      }
-      scoredPreferences.content = {
-        relevance: 0.6,
-        resolutions: {
-          100: 1,
-          70: 0.6
-        }
-      }
+        .setConsent(
+          new Issue()
+            .setRelevance(0.4)
+            .setResolutions({
+              analytics: 0.3,
+              marketing: 0.5,
+              personalizedAds: 0.2
+            })
+        )
+        .setContent(
+          new Issue()
+            .setRelevance(0.6)
+            .setResolutions({
+              100: 1,
+              70: 0.6
+            })
+        )
+
       const cut = new Calculator()
       const actual = cut.calcSitesScoringFunction(scoredPreferences)
 
-      expect(actual([true, false, false], 1, null)).toEqual(
-        72
-      )
+      expect(actual([true, false, false], 1, null)).toEqual(72)
     })
 
     test('3C && site: preferences (cost, consent, content) should return respective function', () => {
       const scoredPreferences = new ScoredPreferences()
-      scoredPreferences.cost = {
-        relevance: 0.4,
-        resolutions: {
-          5: 1,
-          1: 0.2
-        }
-      }
-      scoredPreferences.consent = {
-        relevance: 0.2,
-        resolutions: {
-          analytics: 0.3,
-          marketing: 0.5,
-          personalizedAds: 0.2
-        }
-      }
-      scoredPreferences.content = {
-        relevance: 0.4,
-        resolutions: {
-          100: 1,
-          70: 0.9
-        }
-      }
+        .setCost(
+          new Issue().setRelevance(0.4).setResolutions({
+            5: 1,
+            1: 0.2
+          })
+        )
+        .setConsent(
+          new Issue().setRelevance(0.2).setResolutions({
+            analytics: 0.3,
+            marketing: 0.5,
+            personalizedAds: 0.2
+          })
+        )
+        .setContent(
+          new Issue().setRelevance(0.4).setResolutions({
+            100: 1,
+            70: 0.9
+          })
+        )
 
       const cut = new Calculator()
       const actual = cut.calcSitesScoringFunction(scoredPreferences)
@@ -139,23 +94,31 @@ describe('Calculator', () => {
     })
   })
   describe('initUsersScoringFunction', () => {
+    test('If wrong data model then throw Error', () => {
+      const scoredPreferences = { }
+      const cut = new Calculator()
+      expect(() => {
+        cut.calcUsersScoringFunction(scoredPreferences)
+      }).toThrow(new Error('Preferences must be in data model ScoredPreferences'))
+    })
+  })
+
+  describe('initUsersScoringFunction', () => {
     test('if not enough bools provded, then throw error', () => {
       const scoredPreferences = new ScoredPreferences()
-      scoredPreferences.consent = {
-        relevance: 0.4,
-        resolutions: {
-          analytics: 0.3,
-          marketing: 0.5,
-          personalizedAds: 0.2
-        }
-      }
-      scoredPreferences.content = {
-        relevance: 0.6,
-        resolutions: {
-          100: 1,
-          70: 0.6
-        }
-      }
+        .setConsent(
+          new Issue().setRelevance(0.4).setResolutions({
+            analytics: 0.3,
+            marketing: 0.5,
+            personalizedAds: 0.2
+          })
+        )
+        .setContent(
+          new Issue().setRelevance(0.6).setResolutions({
+            100: 1,
+            70: 0.6
+          })
+        )
       const cut = new Calculator()
       const actual = cut.calcUsersScoringFunction(scoredPreferences)
 
@@ -166,21 +129,19 @@ describe('Calculator', () => {
 
     test('2C && user: prefernces (consent, content) should return respective function', () => {
       const scoredPreferences = new ScoredPreferences()
-      scoredPreferences.consent = {
-        relevance: 0.4,
-        resolutions: {
-          analytics: 0.3,
-          marketing: 0.5,
-          personalizedAds: 0.2
-        }
-      }
-      scoredPreferences.content = {
-        relevance: 0.6,
-        resolutions: {
-          100: 1,
-          70: 0.9
-        }
-      }
+        .setConsent(
+          new Issue().setRelevance(0.4).setResolutions({
+            analytics: 0.3,
+            marketing: 0.5,
+            personalizedAds: 0.2
+          })
+        )
+        .setContent(
+          new Issue().setRelevance(0.6).setResolutions({
+            100: 1,
+            70: 0.6
+          })
+        )
       const cut = new Calculator()
       const actual = cut.calcUsersScoringFunction(scoredPreferences)
 
@@ -191,28 +152,25 @@ describe('Calculator', () => {
 
     test('3C && user: preferences (cost, consent, content) should return respective function', () => {
       const scoredPreferences = new ScoredPreferences()
-      scoredPreferences.cost = {
-        relevance: 0.4,
-        resolutions: {
-          5: 1,
-          1: 0.2
-        }
-      }
-      scoredPreferences.consent = {
-        relevance: 0.2,
-        resolutions: {
-          analytics: 0.3,
-          marketing: 0.5,
-          personalizedAds: 0.2
-        }
-      }
-      scoredPreferences.content = {
-        relevance: 0.4,
-        resolutions: {
-          100: 1,
-          70: 0.9
-        }
-      }
+        .setCost(
+          new Issue().setRelevance(0.4).setResolutions({
+            5: 1,
+            1: 0.2
+          })
+        )
+        .setConsent(
+          new Issue().setRelevance(0.2).setResolutions({
+            analytics: 0.3,
+            marketing: 0.5,
+            personalizedAds: 0.2
+          })
+        )
+        .setContent(
+          new Issue().setRelevance(0.4).setResolutions({
+            100: 1,
+            70: 0.9
+          })
+        )
 
       const cut = new Calculator()
       const actual = cut.calcUsersScoringFunction(scoredPreferences)
@@ -222,16 +180,6 @@ describe('Calculator', () => {
   })
 
   describe('calcNashOptimalContract', () => {
-    test('IF users scoring function wasnt yet initiliazed THEN throw Error', () => {
-      const cut = new Calculator()
-
-      expect(() => { cut.calcNashContract().toThrow(Error) })
-    })
-    test('IF sites scoring function wasnt yet initiliazed THEN throw Error', () => {
-      const cut = new Calculator()
-
-      expect(() => { cut.calcNashContract().toThrow(Error()) })
-    })
     test('For 2C preferences (content, consent) calculate nash optimal contract', () => {
       const usersScoredPreferences = new ScoredPreferences()
       usersScoredPreferences.consent = {
@@ -275,8 +223,8 @@ describe('Calculator', () => {
       expectedConsent.personalizedAds = true
 
       expect(cut.calcNashContract(usersScoredPreferences, sitesScoredPreferences, usersScoringFunction, sitesScoringFunction))
-        .toEqual(new Header(null, null, expectedConsent, '0', '100'
-        ))
+        .toEqual(new Header().setConsent(expectedConsent).setCost('0').setContent('100')
+        )
     })
     test('For 3C preferences (cost,content, consent) calculate nash optimal contract', () => {
       const usersScoredPreferences = new ScoredPreferences()
@@ -338,8 +286,7 @@ describe('Calculator', () => {
 
       expect(cut.calcNashContract(usersScoredPreferences, sitesScoredPreferences, usersScoringFunction, sitesScoringFunction))
         .toEqual(
-          new Header(null, null, expectedConsent, '2', '100')
-        )
+          new Header().setConsent(expectedConsent).setCost('2').setContent('100'))
     })
   })
 })

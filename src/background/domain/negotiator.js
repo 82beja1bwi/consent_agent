@@ -20,9 +20,8 @@ export default class Negotiator {
    * @returns @param {Header} header a newly initialized header to be appended to the first http-request
    */
   prepareInitialOffer () {
-    const consent = new Consent()
-    consent.rejectAll = true
-    return new Header(NegotiationStatus.EXCHANGE, null, consent, null, null)
+    const consent = new Consent() // empty consent equals reject all
+    return new Header().setStatus(NegotiationStatus.EXCHANGE).setConsent(consent)
   }
 
   /**
@@ -67,21 +66,23 @@ export default class Negotiator {
 
     const is2C = !!header.cost
 
-    const sitesScoredPreferences = this.preferenceManager.getSitesPreferences(
+    // Load or initiate preferences of user and site
+    let sitesScoredPreferences = this.preferenceManager.getSitesPreferences(
       hostName,
-      is2C,
-      header
+      is2C
     )
+
+    if (!sitesScoredPreferences) {
+      sitesScoredPreferences = header.preferences
+      this.preferenceManager.setSitesPreferences(hostName, sitesScoredPreferences)
+    }
 
     const usersScoredPreferences = this.preferenceManager.getUsersPreferences(
       hostName,
       is2C
     )
 
-    // TODO load preferences
-    //    OR retrieve them from header
-    //    OR calculate/estimate them
-
+    // Calculate the scoring functions
     const usersScoringFunction = this.calculator.calcUsersScoringFunction(
       usersScoredPreferences
     )
@@ -89,16 +90,16 @@ export default class Negotiator {
       sitesScoredPreferences
     )
 
-    // This implementation bases on the nash optimal contract
-    const counterOfferHeader = this.calculator.calcNashContract(
+    // Calculate the optimal contract, in this implementation the Nash contract
+    const headerForCounterOffer = this.calculator.calcNashContract(
       usersScoredPreferences,
       sitesScoredPreferences,
       usersScoringFunction,
       sitesScoringFunction
     )
 
-    counterOfferHeader.status = NegotiationStatus.NEGOTIATION
+    headerForCounterOffer.status = NegotiationStatus.NEGOTIATION
 
-    return counterOfferHeader
+    return headerForCounterOffer
   }
 }

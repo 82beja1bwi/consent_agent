@@ -1,6 +1,6 @@
 import Consent from './models/consent.js'
 import Header from './models/header.js'
-import ScoredPreferences from './models/scored_preferences/scored_preferences.js'
+import ScoredPreferences from './models/scored_preferences.js'
 
 /**
  * can calculate Nash-optimal contracts
@@ -18,7 +18,7 @@ export default class Calculator {
     if (!(scoredPreferences instanceof ScoredPreferences)) {
       throw Error('Preferences must be in data model ScoredPreferences')
     }
-    return this._preferencesDataToFunction(scoredPreferences, true)
+    return this.#preferencesDataToFunction(scoredPreferences, true)
   }
 
   /**
@@ -30,7 +30,7 @@ export default class Calculator {
     if (!(scoredPreferences instanceof ScoredPreferences)) {
       throw Error('Preferences must be in data model ScoredPreferences')
     }
-    return this._preferencesDataToFunction(scoredPreferences, false)
+    return this.#preferencesDataToFunction(scoredPreferences, false)
   }
 
   /**
@@ -50,54 +50,57 @@ export default class Calculator {
     usersScoringFunction,
     sitesScoringFunction
   ) {
-    // In these nested loops, the best contract amongst all possible combinations of cost,
-    // content and consent preferences is found
-    const temporaryResult = { highscore: 0, bestContract: null }
-    const booleans = []
+    let highscore = 0
+    let bestContract = null
+    const costResolutions = sitesScoredPreferences.cost?.resolutions ?? { 0: null }
+    const consentCombinations = []
+    const limit = Object.keys(
+      sitesScoredPreferences.consent.resolutions
+    ).length
 
-    const costResolutions = sitesScoredPreferences.cost.resolutions ?? {
-      0: null
-    }
+    this.#combineBools(limit, [], consentCombinations)
 
+    // For all possible combinations of cost, content and consent calculate the product scoring functions
     for (const costKey in costResolutions) {
       // costKey only relevant in 3C negotiation
-      for (const contentKey in sitesScoredPreferences.content
-        .resolutions) {
-        // a recursive function to produce as many bools as needed to fill the negotiated consent resolutions
-        this._recursivelyCombineToOptimalContract(
-          Object.keys(sitesScoredPreferences.consent.resolutions).length,
-          booleans,
-          contentKey,
-          costKey,
-          sitesScoredPreferences.content.resolutions[contentKey],
-          usersScoredPreferences.content.resolutions[contentKey],
-          sitesScoredPreferences.cost.resolutions?.[costKey],
-          usersScoredPreferences.cost.resolutions?.[costKey],
-          sitesScoringFunction,
-          usersScoringFunction,
-          temporaryResult
-        )
+      for (const contentKey in sitesScoredPreferences.content.resolutions) {
+        for (let i = 0; i < consentCombinations.length; i++) {
+          const tempProduct = this.#calcContractValue(
+            usersScoringFunction,
+            sitesScoringFunction,
+            consentCombinations[i],
+            usersScoredPreferences.content.resolutions[contentKey],
+            sitesScoredPreferences.content.resolutions[contentKey],
+            usersScoredPreferences.cost?.resolutions?.[costKey],
+            sitesScoredPreferences.cost?.resolutions?.[costKey]
+          )
+
+          console.log(tempProduct, '   ', [consentCombinations[i], contentKey, costKey])
+
+          if (tempProduct > highscore) {
+            // Found new best contract
+            highscore = tempProduct
+            bestContract = [...consentCombinations[i], contentKey, costKey]
+          }
+        }
       }
     }
-    console.log('hihgscore ', temporaryResult.highscore)
-    console.log(temporaryResult.bestContract)
+    console.log('highscore ', highscore)
+    console.log(bestContract)
 
     // Map interim data model to contract
     const consent = new Consent()
 
     Object.keys(sitesScoredPreferences.consent.resolutions).forEach(
       (resolution, index) => {
-        consent[resolution] = temporaryResult.bestContract[index]
+        consent[resolution] = bestContract[index]
       }
     )
 
-    return new Header(
-      null,
-      null,
-      consent,
-      temporaryResult.bestContract[temporaryResult.bestContract.length - 1],
-      temporaryResult.bestContract[temporaryResult.bestContract.length - 2]
-    )
+    return new Header()
+      .setConsent(consent)
+      .setCost(bestContract[bestContract.length - 1])
+      .setContent(bestContract[bestContract.length - 2])
   }
 
   /**
@@ -131,25 +134,13 @@ export default class Calculator {
    * 100 * (0.4 * (0 + 0.3 * analytics + 0.5 * marketing + 0.2 * personalizedAds) + 0.6 * contentScore)
    */
 
-  _preferencesDataToFunction (scoredPreferences, isUserPreferences) {
-    // if (!(scoredPreferences instanceof ScoredPreferences)) throw new Error('Not instanceof ScoredPreferences')
-
-    const is3CNegotiation = !!scoredPreferences.cost.relevance
+  #preferencesDataToFunction = (scoredPreferences, isUserPreferences) => {
+    const is3CNegotiation = scoredPreferences.cost?.relevance
     const consentResolutions = scoredPreferences.consent.resolutions
     const relevanceOfConsent = scoredPreferences.consent.relevance
     const relevanceOfContent = scoredPreferences.content.relevance
 
     return function (bools, contentScore, costScore) {
-      console.log(
-        'User? ',
-        isUserPreferences,
-        ', ',
-        bools,
-        ', ',
-        contentScore,
-        ', ',
-        costScore
-      )
       if (bools.length < Object.keys(consentResolutions).length) {
         throw new Error('Not enough bools provided')
       }
@@ -176,72 +167,63 @@ export default class Calculator {
   }
 
   /**
-   * !!is recursive!!
-   *
-   * combines all possible boolean values for the consent resolutions
-   * (analytics, analytics && marketing ... analytics && marketing && ... && personalizedAds)
-   * to calculate the score of each possible contract.
-   *
-   * @param {number} limit number of consent resolutions (e.g. 3 if only analytics, marketing and personalizedAds are requested by the site)
-   * @param {*} bools an empty list, which will be filled and emptied during the recursions
-   * @param {*} sitesContentPreference site's preference score for the current content resolution
-   * @param {*} usersContentPreference user's preference score for the current content resolution
-   * @param {*} result A return object to be filled
-   * @returns an object with a highscore of the best contract and the best contract
+   * Recursively create a list of all possible consen combinations
+   * @param {number} limit if consent options {analytics, marketing} then limit is 2 ...
+   * @param {[Boolean]} bools initially empty
+   * @param {[[Boolean]]} resultingListOfBoolsLists will be filled during the recursion
+   * @returns resultingListOfBoolsLists
    */
-  _recursivelyCombineToOptimalContract (
-    limit,
-    bools,
-    contentKey,
-    costKey,
-    sitesContentPreference,
-    usersContentPreference,
-    sitesCostPreference,
-    usersCostPreference,
-    sitesScoringFunction,
-    usersScoringFunction,
-    result
-  ) {
+  #combineBools = (
+    limit, // initally e.g. 3
+    bools, // initally an empty array
+    resultingListOfBoolsLists
+  ) => {
     if (limit === 0) {
-      const product =
-        usersScoringFunction(
-          bools,
-          usersContentPreference,
-          usersCostPreference
-        ) *
-        sitesScoringFunction(
-          bools,
-          sitesContentPreference,
-          sitesCostPreference
-        )
-      console.log(product, '   ', [...bools, contentKey, costKey])
-      if (product > result.highscore) {
-        // Found new best contract
-        result.highscore = product
-        result.bestContract = [...bools, contentKey, costKey]
-      }
+      // console.log(bools)// this i want to add to a list of lists
+      resultingListOfBoolsLists.push([...bools])
       return
     }
     // combine remaining consent options until last option included in combination
-
     limit--
 
     for (const bool of [false, true]) {
       bools.push(bool)
-      this._recursivelyCombineToOptimalContract(
-        limit,
-        bools,
-        contentKey,
-        costKey,
-        sitesContentPreference,
-        usersContentPreference,
-        sitesCostPreference,
-        usersCostPreference,
-        sitesScoringFunction,
-        usersScoringFunction,
-        result
-      )
+      this.#combineBools(limit, bools, resultingListOfBoolsLists)
       bools.pop(bool)
     }
+  }
+
+  /**
+   * Calculate the value (product) of a contract
+   * @param {Function} usersScoringFunction
+   * @param {Function} sitesScoringFunction
+   * @param {[Boolean]} consentCombination
+   * @param {number} usersContentPreference
+   * @param {number} sitesContentPreference
+   * @param {number} usersCostPreference
+   * @param {number} sitesCostPreference
+   * @returns
+   */
+  #calcContractValue = (
+    usersScoringFunction,
+    sitesScoringFunction,
+    consentCombination,
+    usersContentPreference,
+    sitesContentPreference,
+    usersCostPreference,
+    sitesCostPreference
+  ) => {
+    return (
+      usersScoringFunction(
+        consentCombination,
+        usersContentPreference,
+        usersCostPreference
+      ) *
+      sitesScoringFunction(
+        consentCombination,
+        sitesContentPreference,
+        sitesCostPreference
+      )
+    )
   }
 }

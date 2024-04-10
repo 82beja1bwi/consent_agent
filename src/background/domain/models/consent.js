@@ -17,6 +17,36 @@ export default class Consent {
     this.identification = identification
   }
 
+  setAnalytics (bool) {
+    this.analytics = bool
+    return this // Return 'this' for chaining
+  }
+
+  setMarketing (bool) {
+    this.marketing = bool
+    return this // Return 'this' for chaining
+  }
+
+  setPersonalizedContent (bool) {
+    this.personalizedContent = bool
+    return this // Return 'this' for chaining
+  }
+
+  setPersonalizedAds (bool) {
+    this.personalizedAds = bool
+    return this // Return 'this' for chaining
+  }
+
+  setExternalContent (bool) {
+    this.externalContent = bool
+    return this // Return 'this' for chaining
+  }
+
+  setIdentification (bool) {
+    this.identification = bool
+    return this // Return 'this' for chaining
+  }
+
   toString () {
     let string = ''
 
@@ -48,31 +78,16 @@ export default class Consent {
     // Split the string into individual words
     const options = string.split(' ')
 
-    // Map each word to its corresponding boolean value
-    const consent = {
-      analytics: false,
-      marketing: false,
-      personalizedContent: false,
-      personalizedAds: false,
-      externalContent: false,
-      identification: false
-    }
+    const consent = new Consent()
 
     // Set the boolean values based on the words in the string
     options.forEach((word) => {
-      if (Object.prototype.hasOwnProperty.call(consent, word)) {
-        consent[word] = true
+      if (Consent.prototype.hasOwnProperty.call(consent, word)) {
+        consent[`${word}`] = true
       }
     })
 
     // Return a new instance of Consent with the boolean values
-    return new Consent(
-      consent.analytics,
-      consent.marketing,
-      consent.personalizedContent,
-      consent.personalizedAds,
-      consent.externalContent,
-      consent.identification
-    )
+    return consent
   }
 }
