@@ -21,12 +21,15 @@ export default class BadgeTextManager {
     this.#handleAnotherTabSelected()
   }
 
+  /**
+   * if, on any change in the proposal repository,
+   * the current badge text should be updated, then update it
+   */
   #handleProposalsUpdates = () => {
     this.proposalRepository.proposals$.subscribe({
       next: async (proposals) => {
-        console.log('BADGE MNGR received changes', proposals)
         const hostname = await getHostname()
-        this.#setBadgeText(hostname)
+        this.#setBadgeText(proposals[hostname])
       }
     })
   }
@@ -39,7 +42,7 @@ export default class BadgeTextManager {
     // eslint-disable-next-line no-undef
     browser.tabs.onUpdated.addListener((tabId, changeInfo, tabInfo) => {
       const hostname = new URL(tabInfo.url).hostname
-      this.#setBadgeText(hostname)
+      this.#fromHostnameToBadgeText(hostname)
     })
   }
 
@@ -51,20 +54,26 @@ export default class BadgeTextManager {
     // eslint-disable-next-line no-undef
     browser.tabs.onActivated.addListener(async (activeInfo) => {
       const hostname = await getHostname()
-      // in this case it can actually be null
-      this.#setBadgeText(hostname)
+      this.#fromHostnameToBadgeText(hostname)
     })
+  }
+
+  #fromHostnameToBadgeText (hostname) {
+    const proposal = this.#getProposal(hostname)
+    this.#setBadgeText(proposal)
+  }
+
+  #getProposal = (hostName) => {
+    return this.proposalRepository.getProposal(hostName)
   }
 
   /**
  * helper function that actually sets the text of the batch
  * @param {String} hostName
  */
-  #setBadgeText = (hostName) => {
-    const proposal = this.proposalRepository.getProposal(hostName)
+  #setBadgeText = (proposal) => {
     const text = proposal ? '1' : ''
     // eslint-disable-next-line no-undef
     browser.browserAction.setBadgeText({ text })
-    console.log('SET TEXT to ', text)
   }
 }

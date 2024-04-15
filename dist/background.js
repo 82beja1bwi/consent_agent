@@ -1096,6 +1096,7 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, _toPropertyKey(descriptor.key), descriptor); } }
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+function _classPrivateMethodInitSpec(obj, privateSet) { _checkPrivateRedeclaration(obj, privateSet); privateSet.add(obj); }
 function _classPrivateFieldInitSpec(obj, privateMap, value) { _checkPrivateRedeclaration(obj, privateMap); privateMap.set(obj, value); }
 function _checkPrivateRedeclaration(obj, privateCollection) { if (privateCollection.has(obj)) { throw new TypeError("Cannot initialize the same private elements twice on an object"); } }
 function _defineProperty(obj, key, value) { key = _toPropertyKey(key); if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
@@ -1114,6 +1115,8 @@ function _assertClassBrand(e, t, n) { if ("function" == typeof e ? e === t : e.h
 var _handleProposalsUpdates = /*#__PURE__*/new WeakMap();
 var _handleNewSiteInTab = /*#__PURE__*/new WeakMap();
 var _handleAnotherTabSelected = /*#__PURE__*/new WeakMap();
+var _BadgeTextManager_brand = /*#__PURE__*/new WeakSet();
+var _getProposal = /*#__PURE__*/new WeakMap();
 var _setBadgeText = /*#__PURE__*/new WeakMap();
 var BadgeTextManager = /*#__PURE__*/_createClass(
 /**
@@ -1123,11 +1126,16 @@ var BadgeTextManager = /*#__PURE__*/_createClass(
 function BadgeTextManager(proposalRepository) {
   var _this = this;
   _classCallCheck(this, BadgeTextManager);
+  _classPrivateMethodInitSpec(this, _BadgeTextManager_brand);
   _defineProperty(this, "registerListeners", function () {
     _classPrivateFieldGet(_handleProposalsUpdates, _this).call(_this);
     _classPrivateFieldGet(_handleNewSiteInTab, _this).call(_this);
     _classPrivateFieldGet(_handleAnotherTabSelected, _this).call(_this);
   });
+  /**
+   * if, on any change in the proposal repository,
+   * the current badge text should be updated, then update it
+   */
   _classPrivateFieldInitSpec(this, _handleProposalsUpdates, function () {
     _this.proposalRepository.proposals$.subscribe({
       next: function () {
@@ -1136,13 +1144,12 @@ function BadgeTextManager(proposalRepository) {
           return _regeneratorRuntime().wrap(function _callee$(_context) {
             while (1) switch (_context.prev = _context.next) {
               case 0:
-                console.log('BADGE MNGR received changes', proposals);
-                _context.next = 3;
+                _context.next = 2;
                 return (0,_utils_util_js__WEBPACK_IMPORTED_MODULE_1__.getHostname)();
-              case 3:
+              case 2:
                 hostname = _context.sent;
-                _classPrivateFieldGet(_setBadgeText, _this).call(_this, hostname);
-              case 5:
+                _classPrivateFieldGet(_setBadgeText, _this).call(_this, proposals[hostname]);
+              case 4:
               case "end":
                 return _context.stop();
             }
@@ -1163,7 +1170,7 @@ function BadgeTextManager(proposalRepository) {
     // eslint-disable-next-line no-undef
     browser.tabs.onUpdated.addListener(function (tabId, changeInfo, tabInfo) {
       var hostname = new URL(tabInfo.url).hostname;
-      _classPrivateFieldGet(_setBadgeText, _this).call(_this, hostname);
+      _assertClassBrand(_BadgeTextManager_brand, _this, _fromHostnameToBadgeText).call(_this, hostname);
     });
   });
   _classPrivateFieldInitSpec(this, _handleAnotherTabSelected, function () {
@@ -1182,8 +1189,7 @@ function BadgeTextManager(proposalRepository) {
               return (0,_utils_util_js__WEBPACK_IMPORTED_MODULE_1__.getHostname)();
             case 2:
               hostname = _context2.sent;
-              // in this case it can actually be null
-              _classPrivateFieldGet(_setBadgeText, _this).call(_this, hostname);
+              _assertClassBrand(_BadgeTextManager_brand, _this, _fromHostnameToBadgeText).call(_this, hostname);
             case 4:
             case "end":
               return _context2.stop();
@@ -1195,21 +1201,26 @@ function BadgeTextManager(proposalRepository) {
       };
     }());
   });
+  _classPrivateFieldInitSpec(this, _getProposal, function (hostName) {
+    return _this.proposalRepository.getProposal(hostName);
+  });
   /**
   * helper function that actually sets the text of the batch
   * @param {String} hostName
   */
-  _classPrivateFieldInitSpec(this, _setBadgeText, function (hostName) {
-    var proposal = _this.proposalRepository.getProposal(hostName);
+  _classPrivateFieldInitSpec(this, _setBadgeText, function (proposal) {
     var text = proposal ? '1' : '';
     // eslint-disable-next-line no-undef
     browser.browserAction.setBadgeText({
       text: text
     });
-    console.log('SET TEXT to ', text);
   });
   this.proposalRepository = proposalRepository;
 });
+function _fromHostnameToBadgeText(hostname) {
+  var proposal = _classPrivateFieldGet(_getProposal, this).call(this, hostname);
+  _classPrivateFieldGet(_setBadgeText, this).call(this, proposal);
+}
 
 
 /***/ }),
@@ -2575,15 +2586,11 @@ var ProposalRepository = /*#__PURE__*/function () {
     _classCallCheck(this, ProposalRepository);
     _classPrivateFieldInitSpec(this, _init, function () {
       browser.storage.local.onChanged.addListener(function (changes, area) {
-        console.log("Change in storage area: ".concat(area));
         var changedItems = Object.keys(changes);
         for (var _i = 0, _changedItems = changedItems; _i < _changedItems.length; _i++) {
           var item = _changedItems[_i];
-          console.log("".concat(item, " has changed:"));
-          console.log('New value: ', changes[item].newValue);
           _this.proposals = changes[item].newValue;
           _this.proposals$.next(_this.proposals);
-          console.log('updated proposals stream:', _this.proposals$);
         }
       });
     });
@@ -2601,7 +2608,7 @@ var ProposalRepository = /*#__PURE__*/function () {
      * @returns {Proposal | null}
      */
     function getProposal(hostName) {
-      return this.proposals[hostName] || null;
+      return this.proposals[hostName];
     }
   }, {
     key: "deleteProposal",
@@ -2637,13 +2644,12 @@ var ProposalRepository = /*#__PURE__*/function () {
         return _regeneratorRuntime().wrap(function _callee2$(_context2) {
           while (1) switch (_context2.prev = _context2.next) {
             case 0:
-              console.log('set');
               this.proposals[proposal.hostName] = proposal;
-              _context2.next = 4;
+              _context2.next = 3;
               return browser.storage.local.set({
                 proposals: this.proposals
               });
-            case 4:
+            case 3:
             case "end":
               return _context2.stop();
           }

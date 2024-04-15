@@ -1,6 +1,5 @@
-import ScoredPreferences from '../../../src/background/domain/models/scored_preferences.js'
+import ScoredPreferences, { Issue } from '../../../src/background/domain/models/scored_preferences.js'
 import PreferenceManager from '../../../src/background/domain/preference_manager'
-import PreferencesRepository from '../../../src/background/storage/preferences_repository.js'
 
 jest.mock('../../../src/background/storage/preferences_repository')
 
@@ -10,7 +9,11 @@ describe('PreferenceManager', () => {
 
   beforeEach(() => {
     // Initialize a mock instance of PreferencesRepository
-    preferenceRepositoryMock = new PreferencesRepository()
+    preferenceRepositoryMock = {
+      getUsersPreferences: jest.fn(),
+      getUsersDefaultConsentPreferences: jest.fn(),
+      setUsersPreferences: jest.fn()
+    }
 
     // Create an instance of PreferenceManager with the mock repository
     preferenceManager = new PreferenceManager(preferenceRepositoryMock)
@@ -22,9 +25,12 @@ describe('PreferenceManager', () => {
 
       // Mock the expected return value for getUsersDefaultConsentPreferences method
       const defaultConsentPreferences = {
-        analytics: 0.3,
-        marketing: 0.5,
-        personalizedAds: 0.2
+        analytics: 0.2,
+        marketing: 0.1,
+        personalizedContent: 0.1,
+        personalizedAds: 0.4,
+        externalContent: 0.1,
+        identification: 0.1
       }
       preferenceRepositoryMock.getUsersDefaultConsentPreferences.mockReturnValue(
         defaultConsentPreferences
@@ -41,10 +47,8 @@ describe('PreferenceManager', () => {
 
       // Verify that the returned value is an instance of ScoredPreferences
       const expected = new ScoredPreferences()
-      expected.consent = {
-        relevance: null,
-        resolutions: defaultConsentPreferences
-      }
+      expected.consent = new Issue().setRelevance(1).setResolutions(defaultConsentPreferences)
+
       expect(result).toEqual(expected)
     })
   })

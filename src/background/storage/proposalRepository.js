@@ -12,16 +12,11 @@ export default class ProposalRepository {
 
   #init = () => {
     browser.storage.local.onChanged.addListener((changes, area) => {
-      console.log(`Change in storage area: ${area}`)
-
       const changedItems = Object.keys(changes)
 
       for (const item of changedItems) {
-        console.log(`${item} has changed:`)
-        console.log('New value: ', changes[item].newValue)
         this.proposals = changes[item].newValue
         this.proposals$.next(this.proposals)
-        console.log('updated proposals stream:', this.proposals$)
       }
     })
   }
@@ -32,7 +27,7 @@ export default class ProposalRepository {
    * @returns {Proposal | null}
    */
   getProposal (hostName) {
-    return this.proposals[hostName] || null
+    return this.proposals[hostName]
   }
 
   async deleteProposal (hostName) {
@@ -45,7 +40,6 @@ export default class ProposalRepository {
    * @param {Proposal} proposal
    */
   async setProposal (proposal) {
-    console.log('set')
     this.proposals[proposal.hostName] = proposal
     await browser.storage.local.set({ proposals: this.proposals })
   }
