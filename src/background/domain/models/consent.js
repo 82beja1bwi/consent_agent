@@ -90,4 +90,17 @@ export default class Consent {
     // Return a new instance of Consent with the boolean values
     return consent
   }
+
+  static fromObject (object) {
+    const consent = new Consent()
+    consent
+      .setAnalytics(object.analytics)
+      .setExternalContent(object.externalContent)
+      .setIdentification(object.identification)
+      .setMarketing(object.marketing)
+      .setPersonalizedAds(object.personalizedAds)
+      .setPersonalizedContent(object.personalizedContent)
+
+    return consent
+  }
 }

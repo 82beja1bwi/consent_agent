@@ -1,7 +1,7 @@
 // eslint-disable-next-line no-unused-vars
 import ScoredPreferences from '../domain/models/scored_preferences.js'
 
-export default class PreferencesRepository {
+export default class PreferenceRepository {
   constructor () {
     this.sitesPreferences = new Map()
     this.usersPreferences = new Map()

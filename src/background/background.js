@@ -1,28 +1,41 @@
 import Header from './domain/models/header.js'
-import ContractRepository from './storage/contracts_repository.js' // default singleton
-import Negotiator from './domain/negotiator.js'
-import Calculator from './domain/calculator.js'
-import PreferenceManager from './domain/preference_manager.js'
+import Contract from './domain/models/contract.js'
+import { getHostname } from '../utils/util.js'
+import { proposalRepository, badgeTextManager, interceptor, contractRepository } from './init_dependencies.js'
 import Proposal from './domain/models/proposal.js'
-import ProposalRepository from './storage/proposalRepository.js' // default singleton
-import { getHostname } from './util.js'
-import BadgeTextManager from './badgeTextManager.js'
-import Interceptor from './domain/interceptor.js'
+import Consent from './domain/models/consent.js'
 
-// Dependency Injection
-const negotiator = new Negotiator(new Calculator(), new PreferenceManager())
-const contractRepository = new ContractRepository()
-const proposalRepository = new ProposalRepository()
-const intereceptor = new Interceptor(contractRepository, proposalRepository, negotiator)
-const badgeTextManager = new BadgeTextManager(proposalRepository)
 badgeTextManager.registerListeners()
 
 // TODO remove this test code
-await proposalRepository.setProposal(new Proposal('host1', null, 0, 0))
+proposalRepository.setProposal(new Proposal('host1', null, 0, 0))
 
-await proposalRepository.setProposal(
+proposalRepository.setProposal(
   new Proposal('mail.google.com', null, 1, 2)
 )
+
+contractRepository.setContract(new Contract('fluttercon.dev', new Consent().setAnalytics(true).setExternalContent(true)))
+
+function handleMessage (request, sender, sendResponse) {
+  if (request.saveContract) {
+    const proposal = request.proposal
+    const contract = new Contract()
+      .setHostName(proposal.hostName)
+      .setConsent(proposal.consent)
+      .setContent(proposal.content)
+      .setCost(proposal.cost)
+    contractRepository.setContract(contract)
+    proposalRepository.deleteProposal(proposal.hostName)
+    sendResponse({})
+  } else {
+    const proposal = proposalRepository.getProposal(request.hostname)
+    const contract = contractRepository.getContract(request.hostname)
+    console.log('proposal in back: ', proposal)
+    sendResponse({ proposal, contract })
+  }
+}
+
+browser.runtime.onMessage.addListener(handleMessage)
 
 /**
  * TODO:
@@ -45,7 +58,7 @@ browser.webRequest.onBeforeSendHeaders.addListener(
       const hostname = await getHostname()
       if (!hostname) return // when only search is open, the tab has no URL
 
-      const header = await intereceptor.onBeforeSendHeaders(hostname)
+      const header = await interceptor.onBeforeSendHeaders(hostname)
       if (header) {
         details.requestHeaders.push({
           name: 'ADPC',
@@ -86,21 +99,28 @@ browser.webRequest.onHeadersReceived.addListener(
         const header = Header.fromString(headerString.value)
         console.log('Parsed Header ', header)
 
-        const result = intereceptor.onHeadersReceived(header)
+        const hostName = await getHostname()
+        const result = interceptor.onHeadersReceived(header, hostName)
 
-        // Send response to server or show batch to user
-        if (result instanceof Header) {
-          // Send new proposal to server
-          const headers = {
-            ADPC: result.toString()
+        switch (result.constructor) {
+          case Header:{
+            // Send counter/new proposal to server
+            const headers = {
+              ADPC: result.toString()
+            }
+            const url = new URL(details.url, details.originUrl)
+            fetch(url, { headers })
           }
-          const url = new URL(details.url, details.originUrl)
-          fetch(url, { headers })
-        } else {
-          // Update badge in UI to notify the user on a new contract or contract proposal
-          browser.browserAction.setBadgeText(
-            { text: '1' } // object
-          )
+            break
+          case Proposal:
+            this.proposalRepository.setProposal(result)
+            break
+          case Contract:
+            this.proposalRepository.deleteProposal(hostName)
+            this.contractRepository.setContract(result)
+            break
+          default:
+            break
         }
       }
     }

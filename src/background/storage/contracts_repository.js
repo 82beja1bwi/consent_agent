@@ -12,7 +12,7 @@ export default class ContractRepository {
   setContract (contract) {
     if (contract instanceof Contract) {
       this.contracts[contract.hostName] = contract
-      console.log('Contract stored for ', contract.hostName)
+      console.log('Contract stored for ', contract.hostName, ' ', contract)
     }
   }
 }

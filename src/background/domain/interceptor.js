@@ -1,9 +1,18 @@
-import { getHostname } from '../util.js'
 import Contract from './models/contract.js'
-import { NegotiationStatus } from './models/header.js'
+import Header, { NegotiationStatus } from './models/header.js'
 import Proposal from './models/proposal.js'
 
+import Negotiator from './negotiator.js'
+import ContractRepository from '../storage/contracts_repository.js'
+import ProposalRepository from '../storage/proposalRepository.js'
+
 export default class Interceptor {
+  /**
+   *
+   * @param {ContractRepository} contractRepository
+   * @param {ProposalRepository} proposalRepository
+   * @param {Negotiator} negotiator
+   */
   constructor (contractRepository, proposalRepository, negotiator) {
     this.contractRepository = contractRepository
     this.proposalRepository = proposalRepository
@@ -39,18 +48,14 @@ export default class Interceptor {
  * A) prepare a counter offer for the website
  * or B) prepare a contract proposal for the user
  * @param {*} header
- * @returns {Header | Proposal}
+ * @returns {Header | Proposal | Contract}
  */
-  async onHeadersReceived (header) {
-    const hostName = await getHostname()
-
-    let counterOfferHeader = null
-    // TODO ggf in datenmodell des UI folders auslagern
-    const proposal = null
+  async onHeadersReceived (header, hostName) {
+    let result = null
 
     switch (header.status) {
       case NegotiationStatus.EXCHANGE:
-        counterOfferHeader = this.negotiator.prepareCounteroffer(
+        result = this.negotiator.prepareCounteroffer(
           header,
           hostName
         )
@@ -58,44 +63,34 @@ export default class Interceptor {
       case NegotiationStatus.NEGOTIATION:
         if (this.negotiator.couldBeAttractiveForUser(header, hostName)) {
           // UI: present to user
-          this.proposalRepository.setProposal(
-            new Proposal()
-              .setHostName(header.hostName)
-              .setCost(header.cost)
-              .setConsent(header.consent)
-              .setContent(header.content)
-              .setUserHasAccepted(false)
-          )
+          result = new Proposal()
+            .setHostName(hostName)
+            .setCost(header.cost)
+            .setConsent(header.consent)
+            .setContent(header.content)
+            .setUserHasAccepted(false)
         } else {
           // calculate counter offer
-          counterOfferHeader = this.negotiator.prepareCounteroffer(
-            header,
-            hostName
-          )
+          result = this.negotiator.prepareCounteroffer(header, hostName)
         }
         break
       case NegotiationStatus.ACCEPTED:
       // TODO IF hasUserAlreadyAccepted?
         if (this.proposalRepository.getProposal(hostName)?.userHasAccepted) {
           // TODO: delete proposal
-          this.proposalRepository.deleteProposal(hostName)
-          this.contractRepository.setContract(
-            new Contract()
-              .setHostName(header.hostName)
-              .setCost(header.cost)
-              .setConsent(header.consent)
-              .setContent(header.content)
-          )
+          result = new Contract()
+            .setHostName(hostName)
+            .setCost(header.cost)
+            .setConsent(header.consent)
+            .setContent(header.content)
         } else {
           // ELSE propose contract to user
-          this.proposalRepository.setProposal(
-            new Proposal()
-              .setHostName(header.hostName)
-              .setCost(header.cost)
-              .setConsent(header.consent)
-              .setContent(header.content)
-              .setUserHasAccepted(false)
-          )
+          result = new Proposal()
+            .setHostName(hostName)
+            .setCost(header.cost)
+            .setConsent(header.consent)
+            .setContent(header.content)
+            .setUserHasAccepted(false)
         }
 
         break
@@ -103,6 +98,6 @@ export default class Interceptor {
         break
     }
 
-    return counterOfferHeader || proposal
+    return result
   }
 }

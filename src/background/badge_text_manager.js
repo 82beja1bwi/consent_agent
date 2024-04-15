@@ -1,7 +1,11 @@
 // eslint-disable-next-line no-unused-vars
 import ProposalRepository from './storage/proposalRepository.js'
-import { getHostname } from './util.js'
+import { getHostname } from '../utils/util.js'
 
+/**
+ * Manages the text on the badge.
+ * E.g., if a proposal exists for a site, the text should be 1, else 0
+ */
 export default class BadgeTextManager {
   /**
    *
@@ -20,22 +24,19 @@ export default class BadgeTextManager {
   #handleProposalsUpdates = () => {
     this.proposalRepository.proposals$.subscribe({
       next: async (proposals) => {
+        console.log('BADGE MNGR received changes', proposals)
         const hostname = await getHostname()
-        if (
-          hostname &&
-          Object.prototype.hasOwnProperty.call(proposals, hostname)
-        ) {
-          this.#setBadgeText(hostname)
-        }
+        this.#setBadgeText(hostname)
       }
     })
   }
 
   #handleNewSiteInTab = () => {
-  /**
+    /**
      * Inside a tab a new site is loaded or current one is updated
      * CASE: user opens new tab, then opens gmail
      */
+    // eslint-disable-next-line no-undef
     browser.tabs.onUpdated.addListener((tabId, changeInfo, tabInfo) => {
       const hostname = new URL(tabInfo.url).hostname
       this.#setBadgeText(hostname)
@@ -44,9 +45,10 @@ export default class BadgeTextManager {
 
   #handleAnotherTabSelected = () => {
     /**
-       * Another, already opened or new, tab
-       * CASE: user has opened gmail in another tab, clicks on the tab
-       */
+     * Another, already opened or new, tab
+     * CASE: user has opened gmail in another tab, clicks on the tab
+     */
+    // eslint-disable-next-line no-undef
     browser.tabs.onActivated.addListener(async (activeInfo) => {
       const hostname = await getHostname()
       // in this case it can actually be null
@@ -61,6 +63,8 @@ export default class BadgeTextManager {
   #setBadgeText = (hostName) => {
     const proposal = this.proposalRepository.getProposal(hostName)
     const text = proposal ? '1' : ''
+    // eslint-disable-next-line no-undef
     browser.browserAction.setBadgeText({ text })
+    console.log('SET TEXT to ', text)
   }
 }

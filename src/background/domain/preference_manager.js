@@ -1,5 +1,5 @@
 // eslint-disable-next-line no-unused-vars
-import PreferencesRepository from '../storage/preferences_repository.js'
+import PreferenceRepository from '../storage/preferences_repository.js'
 // eslint-disable-next-line no-unused-vars
 import Header from './models/header.js'
 // eslint-disable-next-line no-unused-vars
@@ -8,7 +8,7 @@ import ScoredPreferences, { Issue } from './models/scored_preferences.js'
 export default class PreferenceManager {
   /**
    *
-   * @param {PreferencesRepository} preferenceRepository
+   * @param {PreferenceRepository} preferenceRepository
    */
   constructor (preferenceRepository) {
     this.preferenceRepository = preferenceRepository
