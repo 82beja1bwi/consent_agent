@@ -10,12 +10,14 @@ export default class ProposalRepository {
     this.#init()
   }
 
-  #init = () => {
+  #init = async () => {
+    const res = await browser.storage.local.get('proposals')
+    this.proposals = res.proposals
     browser.storage.local.onChanged.addListener((changes, area) => {
       const changedItems = Object.keys(changes)
 
       for (const item of changedItems) {
-        this.proposals = changes[item].newValue
+        this.proposals = changes[item].newValue.proposals
         this.proposals$.next(this.proposals)
       }
     })
@@ -40,6 +42,7 @@ export default class ProposalRepository {
    * @param {Proposal} proposal
    */
   async setProposal (proposal) {
+    console.log('CALLED SET PROP', proposal)
     this.proposals[proposal.hostName] = proposal
     await browser.storage.local.set({ proposals: this.proposals })
   }

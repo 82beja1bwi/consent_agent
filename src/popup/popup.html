@@ -23,6 +23,22 @@
         margin: 4px 2px;
         cursor: pointer;
       }
+
+      /* Add your CSS styles here */
+      .option-row {
+        margin-bottom: 10px;
+      }
+      .grade-slider-container {
+        flex: 1;
+        display: flex;
+        align-items: center;
+      }
+      .grade-value {
+        margin-right: 10px;
+      }
+      .grade-slider {
+        width: 200px; /* Adjust width as needed */
+      }
     </style>
   </head>
   <body>
@@ -43,8 +59,12 @@
       <strong>Content:</strong>
       <span id="content"></span>
     </div>
-    <!-- Button for accepting -->
-    <button id="acceptButton">Accept</button>
+    <div id="optionsContainer">
+    <!-- Generated option rows will be placed here -->
+    </div>
+       <!-- Button for accepting -->
+    <button id="button">Accept</button>
+  </div>
     <script src="popup.js"></script>
   </body>
 </html>

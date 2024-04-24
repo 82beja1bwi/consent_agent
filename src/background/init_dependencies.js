@@ -16,8 +16,11 @@ const preferenceRepository = new PreferenceRepository()
 const calculator = new Calculator()
 const preferenceManager = new PreferenceManager(preferenceRepository)
 const negotiator = new Negotiator(calculator, preferenceManager)
-const interceptor = new Interceptor(contractRepository, proposalRepository, negotiator)
+const interceptor = new Interceptor(contractRepository, proposalRepository, negotiator, preferenceManager)
 const badgeTextManager = new BadgeTextManager(proposalRepository)
 
-// Export Dependencies
+// TODO REMOVE THIS TEST CODE
+preferenceManager.initUsersPreferences('mail.google.com')
+
+// Export Dependencies to background.js index script
 export { proposalRepository, contractRepository, badgeTextManager, interceptor }

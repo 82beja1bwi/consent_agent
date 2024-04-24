@@ -5,6 +5,7 @@ import Proposal from './models/proposal.js'
 import Negotiator from './negotiator.js'
 import ContractRepository from '../storage/contracts_repository.js'
 import ProposalRepository from '../storage/proposalRepository.js'
+import PreferenceManager from './preference_manager.js'
 
 export default class Interceptor {
   /**
@@ -12,11 +13,45 @@ export default class Interceptor {
    * @param {ContractRepository} contractRepository
    * @param {ProposalRepository} proposalRepository
    * @param {Negotiator} negotiator
+   * @param {PreferenceManager} preferenceManager
    */
-  constructor (contractRepository, proposalRepository, negotiator) {
+  constructor (contractRepository, proposalRepository, negotiator, preferenceManager) {
     this.contractRepository = contractRepository
     this.proposalRepository = proposalRepository
+    this.preferenceManager = preferenceManager
     this.negotiator = negotiator
+  }
+
+  handleGetData (hostname) {
+    const proposal = this.proposalRepository.getProposal(hostname)
+    const contract = this.contractRepository.getContract(hostname)
+    const costResolutions = this.preferenceManager
+      .getSitesPreferences(hostname, false)
+      ?.cost.getResolutionsKeys()
+    // const costPreferences = {} // [0, 2, 8, 10]
+    return { proposal, contract, costResolutions }
+  }
+
+  async handleUpdatedCostPreferences (hostname, resolutions) {
+    const prefs = this.preferenceManager.createUsers3CPreferences(
+      hostname,
+      resolutions
+    )
+
+    return new Header()
+      .setStatus(NegotiationStatus.EXCHANGE)
+      .setPreferences(prefs)
+  }
+
+  async handleAcceptedProposal (hostname, proposal) {
+    const contract = new Contract()
+      .setHostName(hostname)
+      .setConsent(proposal.consent)
+      .setContent(proposal.content)
+      .setCost(proposal.cost)
+    this.contractRepository.setContract(contract)
+    this.proposalRepository.deleteProposal(proposal.hostName)
+    // TODO notify domain
   }
 
   /**

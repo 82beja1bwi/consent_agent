@@ -47,6 +47,10 @@ export default class Consent {
     return this // Return 'this' for chaining
   }
 
+  isRejectAll () {
+    return !(this.analytics && this.marketing && this.personalizedContent && this.personalizedAds && this.externalContent && this.identification)
+  }
+
   toString () {
     let string = ''
 

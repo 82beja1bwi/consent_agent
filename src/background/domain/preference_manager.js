@@ -99,14 +99,36 @@ export default class PreferenceManager {
     return scoredPreferences
   }
 
+  createUsers3CPreferences (hostname, costResolutions) {
+    const is2C = true
+    const prefs = this.preferenceRepository.getUsersPreferences(
+      hostname,
+      is2C
+    )
+
+    if (!prefs) {
+      throw new Error('No User Preferences for host: ', hostname)
+    }
+    // todo: remove test code
+    // prefs.setContent(new Issue())
+
+    prefs.setCost(
+      new Issue().setRelevance(0.4).setResolutions(costResolutions)
+    )
+    prefs.consent.setRelevance(0.2)
+    prefs.content.setRelevance(0.4)
+
+    this.preferenceRepository.setUsersPreferences(hostname, prefs)
+    return prefs
+  }
+
   /**
    *
    * @param {String} hostName
    * @param {Boolean} is2C
-   * @param {Header} header
    * @returns {ScoredPreferences}
    */
-  getSitesPreferences (hostName, is2C, header) {
+  getSitesPreferences (hostName, is2C) {
     const scoredPreferences = this.preferenceRepository.getSitesPreferences(
       hostName,
       is2C

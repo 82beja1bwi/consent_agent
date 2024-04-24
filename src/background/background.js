@@ -1,38 +1,52 @@
-import Header from './domain/models/header.js'
+import Header, { NegotiationStatus } from './domain/models/header.js'
 import Contract from './domain/models/contract.js'
-import { getHostname } from '../utils/util.js'
+import { getHostname, getURL } from '../utils/util.js'
 import { proposalRepository, badgeTextManager, interceptor, contractRepository } from './init_dependencies.js'
 import Proposal from './domain/models/proposal.js'
-import Consent from './domain/models/consent.js'
+
+export const MessageActions = {
+  PROPOSAL_ACCEPTED: 1,
+  GET_DATA: 2,
+  COST_PREFERENCES_RECEIVED: 3
+  // Add more message actions as needed
+}
 
 badgeTextManager.registerListeners()
 
 // TODO remove this test code
-proposalRepository.setProposal(new Proposal('host1', null, 0, 0))
+// proposalRepository.setProposal(new Proposal('mail.google.com', null, 1, 0))
+// //)
 
-proposalRepository.setProposal(
-  new Proposal('mail.google.com', null, 1, 2)
-)
+// contractRepository.setContract(new Contract('fluttercon.dev', new Consent().setAnalytics(true).setExternalContent(true)))
 
-contractRepository.setContract(new Contract('fluttercon.dev', new Consent().setAnalytics(true).setExternalContent(true)))
-
+// TODO wrap into separate class called e.g., messagehandler
 function handleMessage (request, sender, sendResponse) {
-  if (request.saveContract) {
-    const proposal = request.proposal
-    const contract = new Contract()
-      .setHostName(proposal.hostName)
-      .setConsent(proposal.consent)
-      .setContent(proposal.content)
-      .setCost(proposal.cost)
-    contractRepository.setContract(contract)
-    proposalRepository.deleteProposal(proposal.hostName)
-    sendResponse({})
-  } else {
-    const proposal = proposalRepository.getProposal(request.hostname)
-    const contract = contractRepository.getContract(request.hostname)
-    console.log('proposal in back: ', proposal)
-    sendResponse({ proposal, contract })
+  let response = {}
+  const hostname = request.hostname
+
+  switch (request.action) {
+    case MessageActions.PROPOSAL_ACCEPTED:
+      interceptor.handleAcceptedProposal(hostname, request.proposal)
+      break
+    case MessageActions.GET_DATA:
+      response = interceptor.handleGetData()
+      break
+    case MessageActions.COST_PREFERENCES_RECEIVED:
+      { const header = interceptor.handleUpdatedCostPreferences(hostname, request.resolutinos)
+        const headers = {
+          ADPC: header.toString()
+        }
+        getURL().then((url) => {
+          console.log('now fetching URL') // const url = new URL(details.url, details.originUrl)
+          fetch(url, { headers })
+        })
+      }
+
+      break
+    default:
+      break
   }
+  sendResponse(response)
 }
 
 browser.runtime.onMessage.addListener(handleMessage)

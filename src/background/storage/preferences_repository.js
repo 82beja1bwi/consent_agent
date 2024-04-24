@@ -15,6 +15,7 @@ export default class PreferenceRepository {
    */
   getUsersPreferences (hostName, is2C) {
     const pref = this.usersPreferences.get(hostName)
+    console.log(' REPO: pref: ', pref, ' of host ', hostName)
 
     if (!pref) return null
 
@@ -51,9 +52,9 @@ export default class PreferenceRepository {
   setUsersPreferences (hostName, scoredPreferences) {
     if (this.usersPreferences.has(hostName)) {
       const temp = this.usersPreferences.get(hostName)
-      this.usersPreferences.set(hostName, { temp, scoredPreferences })
+      this.usersPreferences.set(hostName, [temp, scoredPreferences])
     } else {
-      this.usersPreferences.set(hostName, scoredPreferences)
+      this.usersPreferences.set(hostName, [scoredPreferences])
     }
   }
 

@@ -28,8 +28,10 @@ export default class BadgeTextManager {
   #handleProposalsUpdates = () => {
     this.proposalRepository.proposals$.subscribe({
       next: async (proposals) => {
-        const hostname = await getHostname()
-        this.#setBadgeText(proposals[hostname])
+        if (proposals) {
+          const hostname = await getHostname()
+          this.#setBadgeText(proposals[hostname])
+        }
       }
     })
   }

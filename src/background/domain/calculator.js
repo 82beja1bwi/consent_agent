@@ -128,10 +128,10 @@ export default class Calculator {
    *   }
    * }
    * OUTPUT (isUserPreferences)
-   * 100 * (0.4 * (1 - 0.3 * analytics - 0.5 * marketing - 0.2 * personalizedAds) + 0.6 * contentScore
+   * 100 * ((0.4 * (1 - 0.3 * analytics - 0.5 * marketing - 0.2 * personalizedAds) + 0.6 * contentScore)
    *
    * OUTPUT (!isUserPreferences)
-   * 100 * (0.4 * (0 + 0.3 * analytics + 0.5 * marketing + 0.2 * personalizedAds) + 0.6 * contentScore)
+   * 100 * ((0.4 * (0 + 0.3 * analytics + 0.5 * marketing + 0.2 * personalizedAds) + 0.6 * contentScore)
    */
 
   #preferencesDataToFunction = (scoredPreferences, isUserPreferences) => {

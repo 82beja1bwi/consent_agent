@@ -21,6 +21,10 @@ export class Issue {
 
     return this
   }
+
+  getResolutionsKeys () {
+    return Array.from(this.resolutions.keys())
+  }
 }
 
 export default class ScoredPreferences {
