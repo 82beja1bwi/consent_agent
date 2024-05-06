@@ -2,17 +2,16 @@ import Contract from '../domain/models/contract.js'
 
 export default class ContractRepository {
   constructor () {
-    this.contracts = {}
+    this.contracts = new Map()
   }
 
   getContract (hostname) {
-    return this.contracts[hostname] || null
+    return Contract.fromData(this.contracts.get(hostname)) || null
   }
 
   setContract (contract) {
     if (contract instanceof Contract) {
-      this.contracts[contract.hostName] = contract
-      console.log('Contract stored for ', contract.hostName, ' ', contract)
+      this.contracts.set(contract.hostName, contract)
     }
   }
 }

@@ -11,4 +11,16 @@ export default class Proposal extends Contract {
 
     return this
   }
+
+  static fromData (data) {
+    if (!data) return null
+
+    const contract = Contract.fromData(data)
+    return new Proposal()
+      .setHostName(contract.hostName)
+      .setConsent(contract.consent)
+      .setContent(contract.content)
+      .setCost(contract.cost)
+      .setUserHasAccepted(data.userHasAccepted)
+  }
 }

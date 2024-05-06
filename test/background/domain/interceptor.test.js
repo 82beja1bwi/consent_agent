@@ -7,6 +7,7 @@ describe('Interceptor.js', () => {
   let contractRepositoryMock
   let proposalRepositoryMock
   let negotiatorMock
+  let preferenceManagerMock
 
   beforeEach(() => {
     // Initialize a mock instance of PreferencesRepository
@@ -15,12 +16,76 @@ describe('Interceptor.js', () => {
       setProposal: jest.fn(),
       getProposal: jest.fn()
     }
+    preferenceManagerMock = {
+      createUsers3CPreferences: jest.fn()
+    }
+
     negotiatorMock = {
       prepareCounteroffer: jest.fn(),
       couldBeAttractiveForUser: jest.fn()
     }
 
     // Create an instance of PreferenceManager with the mock repository
+  })
+
+  describe('handleUpdatedCostPreferences', () => {
+    it('should return a Header object with correct status and preferences', async () => {
+      // Arrange
+
+      const hostname = 'example.com'
+      const resolutions = { analytics: 1, marketing: 5, personalizedAds: 3 }
+      preferenceManagerMock.createUsers3CPreferences.mockReturnValue('prefs')
+
+      const cut = new Interceptor(contractRepositoryMock, proposalRepositoryMock, negotiatorMock, preferenceManagerMock)
+      // Act
+      const result = await cut.handleUpdatedCostPreferences(
+        hostname,
+        resolutions
+      )
+
+      // Assert
+      expect(
+        preferenceManagerMock.createUsers3CPreferences
+      ).toHaveBeenCalledWith(hostname, {
+        analytics: 0.1111111111111111,
+        marketing: 0.5555555555555556,
+        personalizedAds: 0.3333333333333333
+      })
+      expect(result).toBeInstanceOf(Header)
+      expect(result.status).toBe(NegotiationStatus.EXCHANGE)
+      expect(result.preferences).toBe('prefs') // Check if the preferences are set correctly
+    })
+    it('all same grade results in equal distributions', async () => {
+      // Arrange
+
+      const hostname = 'example.com'
+      const resolutions = { analytics: 1, marketing: 1, personalizedAds: 1 }
+      preferenceManagerMock.createUsers3CPreferences.mockReturnValue('prefs')
+
+      const cut = new Interceptor(
+        contractRepositoryMock,
+        proposalRepositoryMock,
+        negotiatorMock,
+        preferenceManagerMock
+      )
+      // Act
+      const result = await cut.handleUpdatedCostPreferences(
+        hostname,
+        resolutions
+      )
+
+      // Assert
+      expect(
+        preferenceManagerMock.createUsers3CPreferences
+      ).toHaveBeenCalledWith(hostname, {
+        analytics: 0.3333333333333333,
+        marketing: 0.3333333333333333,
+        personalizedAds: 0.3333333333333333
+      })
+      expect(result).toBeInstanceOf(Header)
+      expect(result.status).toBe(NegotiationStatus.EXCHANGE)
+      expect(result.preferences).toBe('prefs') // Check if the preferences are set correctly
+    })
   })
 
   describe('onHeadersReceived', () => {

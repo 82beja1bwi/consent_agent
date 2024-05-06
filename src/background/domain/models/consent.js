@@ -1,20 +1,13 @@
 /// Consent in bool
 /// Current state is bool = true
 export default class Consent {
-  constructor (
-    analytics,
-    marketing,
-    personalizedContent,
-    personalizedAds,
-    externalContent,
-    identification
-  ) {
-    this.analytics = analytics
-    this.marketing = marketing
-    this.personalizedContent = personalizedContent
-    this.personalizedAds = personalizedAds
-    this.externalContent = externalContent
-    this.identification = identification
+  constructor () {
+    this.analytics = false
+    this.marketing = false
+    this.personalizedContent = false
+    this.personalizedAds = false
+    this.externalContent = false
+    this.identification = false
   }
 
   setAnalytics (bool) {
@@ -48,7 +41,14 @@ export default class Consent {
   }
 
   isRejectAll () {
-    return !(this.analytics && this.marketing && this.personalizedContent && this.personalizedAds && this.externalContent && this.identification)
+    return !(
+      this.analytics ||
+      this.marketing ||
+      this.personalizedContent ||
+      this.personalizedAds ||
+      this.externalContent ||
+      this.identification
+    )
   }
 
   toString () {
@@ -98,12 +98,12 @@ export default class Consent {
   static fromObject (object) {
     const consent = new Consent()
     consent
-      .setAnalytics(object.analytics)
-      .setExternalContent(object.externalContent)
-      .setIdentification(object.identification)
-      .setMarketing(object.marketing)
-      .setPersonalizedAds(object.personalizedAds)
-      .setPersonalizedContent(object.personalizedContent)
+      .setAnalytics(object.analytics || false)
+      .setExternalContent(object.externalContent || false)
+      .setIdentification(object.identification || false)
+      .setMarketing(object.marketing || false)
+      .setPersonalizedAds(object.personalizedAds || false)
+      .setPersonalizedContent(object.personalizedContent || false)
 
     return consent
   }

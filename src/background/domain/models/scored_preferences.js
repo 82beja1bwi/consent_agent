@@ -23,7 +23,7 @@ export class Issue {
   }
 
   getResolutionsKeys () {
-    return Array.from(this.resolutions.keys())
+    return Object.keys(this.resolutions)
   }
 }
 
@@ -62,22 +62,21 @@ export default class ScoredPreferences {
     return btoa(JSON.stringify(this))
   }
 
-  static fromBase64EncodedJSON (json) {
-    const data = JSON.parse(atob(json))
+  static fromJSON (json) {
     const scoredPreferences = new ScoredPreferences(
       new Issue(),
       new Issue(),
       new Issue()
     )
 
-    for (const key in data) {
+    for (const key in json) {
       if (!Object.keys(scoredPreferences).includes(key)) {
         throw new Error(`Unknown issue '${key}'.`)
       }
 
       scoredPreferences[`${key}`]
-        .setRelevance(data[key].relevance)
-        .setResolutions(data[key].resolutions)
+        .setRelevance(json[key]?.relevance)
+        .setResolutions(json[key]?.resolutions)
     }
 
     const totalRelevance = Object.values(scoredPreferences).reduce(

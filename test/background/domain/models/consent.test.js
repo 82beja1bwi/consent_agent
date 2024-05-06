@@ -1,20 +1,49 @@
 /* eslint-disable no-undef */
 import Consent from '../../../../src/background/domain/models/consent.js'
 
-describe('Header', () => {
+describe('Consent', () => {
+  describe('isRejectAll', () => {
+    test('if at least 1 is true then rejectedAll is false', () => {
+      const instance = new Consent().setAnalytics(true)
+      const result = instance.isRejectAll()
+      expect(result).toBe(false)
+    })
+    test('if none is true then rejectedAll is true', () => {
+      const instance = new Consent()
+      const result = instance.isRejectAll()
+      expect(result).toBe(true)
+    })
+    test('if all are true then rejectedAll is false', () => {
+      const instance = new Consent()
+        .setAnalytics(true)
+        .setExternalContent(true)
+        .setIdentification(true)
+        .setMarketing(true)
+        .setPersonalizedAds(true)
+        .setPersonalizedContent(true)
+      const result = instance.isRejectAll()
+      expect(result).toBe(false)
+    })
+  })
   describe('toString', () => {
     test('should convert the instance to the String header in space separation', () => {
-      const instance = new Consent(true, true, true, true, true, true)
+      const instance = new Consent()
+        .setAnalytics(true)
+        .setExternalContent(true)
+        .setIdentification(true)
+        .setMarketing(true)
+        .setPersonalizedAds(true)
+        .setPersonalizedContent(true)
 
-      expect(instance.toString()).toBe('analytics marketing personalizedContent personalizedAds externalContent identification')
+      expect(instance.toString()).toBe(
+        'analytics marketing personalizedContent personalizedAds externalContent identification'
+      )
     })
 
     test('only true consent options are included in string', () => {
       const instance = new Consent().setAnalytics(true)
 
-      expect(instance.toString()).toBe(
-        'analytics'
-      )
+      expect(instance.toString()).toBe('analytics')
     })
 
     test('no consent returns empty string', () => {
@@ -26,10 +55,19 @@ describe('Header', () => {
 
   describe('fromString', () => {
     test('should create an instance from a given string', () => {
-      const input = 'rejectAll acceptAll analytics marketing personalizedContent personalizedAds externalContent identification'
+      const input =
+        'rejectAll acceptAll analytics marketing personalizedContent personalizedAds externalContent identification'
       const actual = Consent.fromString(input)
 
-      expect(actual).toEqual(new Consent(true, true, true, true, true, true, true, true))
+      expect(actual).toEqual(
+        new Consent()
+          .setAnalytics(true)
+          .setExternalContent(true)
+          .setIdentification(true)
+          .setMarketing(true)
+          .setPersonalizedAds(true)
+          .setPersonalizedContent(true)
+      )
     })
 
     test('IF only analytics in string, THEN only analytics is true', () => {

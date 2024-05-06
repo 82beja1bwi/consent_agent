@@ -12,7 +12,7 @@ export default class Header {
    * Create a new Header instance.
    * @constructor
    * @param {NegotiationStatus} status
-   * @param {ScoredPreferences} preferences
+   * @param {[ScoredPreferences]} preferences
    * @param {Consent} consent
    * @param {number} cost
    * @param {number} content
@@ -21,8 +21,8 @@ export default class Header {
     this.status = status // domain of website
     this.preferences = preferences
     this.consent = consent // [analytics, marketing...] a list!
-    this.cost = cost
-    this.content = content
+    this.cost = cost || 0
+    this.content = content || 0
   }
 
   setStatus (status) {
@@ -80,11 +80,13 @@ export default class Header {
       header += 'content=' + this.content
     }
 
+    console.log('CREATED HEADER STRING', header)
+
     return header.trimEnd()
   }
 
   // Serialization
-  // status=... (optional) preferences=base64encondedString (optional) consent=analytics marketing ...
+  // status=... (optional) preferences=base64encondedString base64encodedString (optional) consent=analytics marketing ...
   //       (optional) cost=2 (optional) content=50
   static fromString (header) {
     const patterns = [
@@ -96,11 +98,16 @@ export default class Header {
     ]
     const matches = patterns.map((p) => {
       const match = p.exec(header)
-      return match ? match[0].split('=')[1] : null
+      // return match ? match[0].split('=')[1] : null
+      return match ? match[0].slice(match[0].indexOf('=') + 1) : null
     })
 
     if (matches[1]) {
-      matches[1] = ScoredPreferences.fromBase64EncodedJSON(matches[1])
+      const data = JSON.parse(atob(matches[1]))
+
+      matches[1] = Array.isArray(data)
+        ? [ScoredPreferences.fromJSON(data[0]), ScoredPreferences.fromJSON(data[1])]
+        : [ScoredPreferences.fromJSON(data)]
     }
 
     if (matches[2]) {
@@ -111,7 +118,7 @@ export default class Header {
       .setStatus(matches[0])
       .setPreferences(matches[1])
       .setConsent(matches[2])
-      .setCost(parseFloat(matches[3]))
-      .setContent(parseFloat(matches[4]))
+      .setCost(matches[3] ? parseFloat(matches[3]) : 0)
+      .setContent(matches[4] ? parseFloat(matches[4]) : 0)
   }
 }

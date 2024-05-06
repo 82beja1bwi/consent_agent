@@ -36,4 +36,16 @@ export default class Contract {
     this.content = value
     return this
   }
+
+  static fromData (data) {
+    if (!data) return null
+
+    const consent = Consent.fromObject(data.consent)
+
+    return new Contract()
+      .setHostName(data.hostName)
+      .setConsent(consent)
+      .setCost(data.cost)
+      .setContent(data.content)
+  }
 }

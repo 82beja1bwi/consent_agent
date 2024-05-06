@@ -42,9 +42,9 @@ export default class BadgeTextManager {
      * CASE: user opens new tab, then opens gmail
      */
     // eslint-disable-next-line no-undef
-    browser.tabs.onUpdated.addListener((tabId, changeInfo, tabInfo) => {
+    browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tabInfo) => {
       const hostname = new URL(tabInfo.url).hostname
-      this.#fromHostnameToBadgeText(hostname)
+      await this.#fromHostnameToBadgeText(hostname)
     })
   }
 
@@ -56,25 +56,25 @@ export default class BadgeTextManager {
     // eslint-disable-next-line no-undef
     browser.tabs.onActivated.addListener(async (activeInfo) => {
       const hostname = await getHostname()
-      this.#fromHostnameToBadgeText(hostname)
+      await this.#fromHostnameToBadgeText(hostname)
     })
   }
 
-  #fromHostnameToBadgeText (hostname) {
-    const proposal = this.#getProposal(hostname)
+  #fromHostnameToBadgeText = async (hostname) => {
+    const proposal = await this.#getProposal(hostname)
     this.#setBadgeText(proposal)
   }
 
-  #getProposal = (hostName) => {
-    return this.proposalRepository.getProposal(hostName)
+  #getProposal = async (hostName) => {
+    return await this.proposalRepository.getProposal(hostName)
   }
 
   /**
- * helper function that actually sets the text of the batch
- * @param {String} hostName
- */
+   * helper function that actually sets the text of the batch
+   * @param {String} hostName
+   */
   #setBadgeText = (proposal) => {
-    const text = proposal ? '1' : ''
+    const text = proposal && !proposal.userHasAccepted ? '1' : ''
     // eslint-disable-next-line no-undef
     browser.browserAction.setBadgeText({ text })
   }

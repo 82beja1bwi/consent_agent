@@ -32,7 +32,7 @@ export default class PreferenceManager {
       })
     )
     // store
-    this.preferenceRepository.setUsersPreferences(hostName, scoredPreferences)
+    this.preferenceRepository.setUsers2CPrefs(hostName, scoredPreferences)
 
     return scoredPreferences
   }
@@ -90,10 +90,9 @@ export default class PreferenceManager {
 
     if (modified) {
       // UPDATE REPO
-      this.preferenceRepository.setUsersPreferences(
-        hostName,
-        scoredPreferences
-      )
+      is2C
+        ? this.preferenceRepository.setUsers2CPrefs(hostName, scoredPreferences)
+        : this.preferenceRepository.setUsers3CPrefs(hostName, scoredPreferences)
     }
 
     return scoredPreferences
@@ -118,7 +117,7 @@ export default class PreferenceManager {
     prefs.consent.setRelevance(0.2)
     prefs.content.setRelevance(0.4)
 
-    this.preferenceRepository.setUsersPreferences(hostname, prefs)
+    this.preferenceRepository.setUsers3CPrefs(hostname, prefs)
     return prefs
   }
 

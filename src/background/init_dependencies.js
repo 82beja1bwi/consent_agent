@@ -20,7 +20,7 @@ const interceptor = new Interceptor(contractRepository, proposalRepository, nego
 const badgeTextManager = new BadgeTextManager(proposalRepository)
 
 // TODO REMOVE THIS TEST CODE
-preferenceManager.initUsersPreferences('mail.google.com')
+// preferenceManager.initUsersPreferences('mail.google.com')
 
 // Export Dependencies to background.js index script
 export { proposalRepository, contractRepository, badgeTextManager, interceptor }

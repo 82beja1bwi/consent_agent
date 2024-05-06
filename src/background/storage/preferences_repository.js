@@ -44,31 +44,23 @@ export default class PreferenceRepository {
     }
   }
 
-  /**
-   *
-   * @param {String} hostName
-   * @param {ScoredPreferences} scoredPreferences
-   */
-  setUsersPreferences (hostName, scoredPreferences) {
-    if (this.usersPreferences.has(hostName)) {
-      const temp = this.usersPreferences.get(hostName)
-      this.usersPreferences.set(hostName, [temp, scoredPreferences])
-    } else {
-      this.usersPreferences.set(hostName, [scoredPreferences])
-    }
+  setUsers2CPrefs (hostname, scoredPreferences) {
+    this.usersPreferences.set(hostname, [scoredPreferences])
+  }
+
+  setUsers3CPrefs (hostname, scoredPreferences) {
+    const temp = this.usersPreferences.get(hostname)
+
+    this.usersPreferences.set(hostname, [temp[0], scoredPreferences])
   }
 
   /**
    *
    * @param {String} hostName
-   * @param {ScoredPreferences} scoredPreferences
+   * @param {[ScoredPreferences]} scoredPreferences
    */
   setSitesPreferences (hostName, scoredPreferences) {
-    if (this.sitesPreferences.has(hostName)) {
-      const temp = this.sitesPreferences.get(hostName)
-      this.sitesPreferences.set(hostName, { temp, scoredPreferences })
-    } else {
-      this.sitesPreferences.set(hostName, scoredPreferences)
-    }
+    this.sitesPreferences.set(hostName, scoredPreferences)
+    console.log(this.sitesPreferences)
   }
 }

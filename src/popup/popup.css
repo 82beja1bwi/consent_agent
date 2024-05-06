@@ -1,31 +1,120 @@
 html,
-body {
-  width: 100px;
-}
+      body {
+        height: 100%;
+        font-family: Arial, sans-serif; /* Set font-family to Arial, and fallback to a generic sans-serif font */
+                    background-color: #ffffff; /* Set background color to white */
+      }
 
-.hidden {
-  display: none;
-}
+      * {
+        padding: 0;
+        padding-right: 10px;
+        padding-left: 5px;
+        margin: 0;
+        box-sizing: border-box;
+      }
 
-button {
-  border: none;
-  width: 100%;
-  margin: 3% auto;
-  padding: 4px;
-  text-align: center;
-  font-size: 1.5em;
-  cursor: pointer;
-  background-color: #e5f2f2;
-}
+      body {
+        display: grid;
+        place-items: left;
+      }
 
-button:hover {
-  background-color: #cff2f2;
-}
+      main {
+        display: flex;
+        flex-direction: column;
+        gap: 2.2em;
+        padding: 1em 0;
+      }
 
-button[type="reset"] {
-  background-color: #fbfbc9;
-}
+      /* === range theme and appearance === */
+      input[type="range"] {
+        font-size: 1.5rem;
+        width: 12.5em;
+      }
 
-button[type="reset"]:hover {
-  background-color: #eaea9d;
-}
+      input[type="range"] {
+        color: #c90076;
+        --thumb-height: 1.125em;
+        --track-height: 0.2em;
+        --track-color: rgba(201, 0, 118, 0.4);
+      }
+
+
+      /* === range commons === */
+      input[type="range"] {
+        position: relative;
+        background: rgba(49, 8, 8, 0);
+        overflow: hidden;
+      }
+
+      input[type="range"]:active {
+        cursor: grabbing;
+      }
+
+      input[type="range"]:disabled {
+        filter: grayscale(1);
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+
+      /* === Firefox specific styles === */
+      input[type="range"],
+      input[type="range"]::-moz-range-track,
+      input[type="range"]::-moz-range-thumb {
+        appearance: none;
+        transition: all ease 100ms;
+        height: var(--thumb-height);
+      }
+
+      input[type="range"]::-moz-range-track,
+      input[type="range"]::-moz-range-thumb,
+      input[type="range"]::-moz-range-progress {
+        background: rgba(183, 83, 83, 0);
+      }
+
+      input[type="range"]::-moz-range-thumb {
+        background: currentColor;
+        border: 0;
+        width: var(--thumb-width, var(--thumb-height));
+        border-radius: var(--thumb-width, var(--thumb-height));
+        cursor: grab;
+      }
+
+      input[type="range"]:active::-moz-range-thumb {
+        cursor: grabbing;
+      }
+
+      input[type="range"]::-moz-range-track {
+        width: 100%;
+        background: var(--track-color);
+      }
+
+      input[type="range"]::-moz-range-progress {
+        appearance: none;
+        background: currentColor;
+        transition-delay: 30ms;
+      }
+
+      input[type="range"]::-moz-range-track,
+      input[type="range"]::-moz-range-progress {
+        height: calc(var(--track-height) + 1px);
+        border-radius: var(--track-height);
+      }
+
+      input[type="range"]::-moz-range-thumb,
+      input[type="range"]::-moz-range-progress {
+        filter: brightness(100%);
+      }
+
+      input[type="range"]:hover::-moz-range-thumb,
+      input[type="range"]:hover::-moz-range-progress {
+        filter: brightness(var(--brightness-hover));
+      }
+
+      input[type="range"]:active::-moz-range-thumb,
+      input[type="range"]:active::-moz-range-progress {
+        filter: brightness(var(--brightness-down));
+      }
+
+      input[type="range"]:disabled::-moz-range-thumb {
+        cursor: not-allowed;
+      }
