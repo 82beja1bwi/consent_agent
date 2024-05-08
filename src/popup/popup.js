@@ -1,5 +1,4 @@
 import { MessageActions } from '../background/background.js'
-import Consent from '../background/domain/models/consent.js'
 import Proposal from '../background/domain/models/proposal.js'
 
 import Contract from '../background/domain/models/contract.js'
@@ -19,55 +18,140 @@ const response = await browser.runtime.sendMessage({
   hostname
 })
 
-console.log(response)
+// console.log(response)
 
-const proposal = Proposal.fromData(response.proposal)
+const proposals = response.proposals?.map((proposal) => (Proposal.fromData(proposal)))
 const contract = Contract.fromData(response.contract)
 const costResolutions = response.costResolutions
 
-// const proposal = null
-// const contract = new Contract()
-//   .setConsent(new Consent().setAnalytics(true).setMarketing(true).setExternalContent(true).setIdentification(true).setPersonalizedAds(true))
-//   .setContent(80)
-//   .setCost(null)
-// const costResolutions = [0, 2, 5, 9]
+// const proposals = [
+//   new Proposal(
+//     'localhost',
+//     new Consent()
+//       .setAnalytics(true)
+//       .setMarketing(true)
+//       .setExternalContent(true),
+//     0,
+//     80,
+//     false
+//   ),
+//   new Proposal(
+//     'localhost',
+//     new Consent().setPersonalizedAds(true),
+//     0,
+//     70,
+//     false
+//   ),
+//   new Proposal(
+//     'localhost',
+//     new Consent().setAnalytics(true).setPersonalizedAds(true),
+//     0,
+//     90,
+//     false
+//   )
+// ]
 
-console.log('proposal: ', proposal)
+// const contract = null
+// // new Contract()
+// //   .setConsent(new Consent().setAnalytics(true).setMarketing(true).setExternalContent(true).setIdentification(true).setPersonalizedAds(true))
+// //   .setContent(80)
+// // .setCost(0)
+// const costResolutions = null // [0, 2, 5, 9]
+
+console.log('proposal: ', proposals)
 console.log('contract: ', contract)
 console.log('cost prefs: ', costResolutions)
 
-if (proposal) {
-  initButton(true, 'ACCEPT', function () {
-    browser.runtime.sendMessage({
-      action: MessageActions.PROPOSAL_ACCEPTED,
-      proposal,
-      hostname
-    })
-    window.close()
+if (proposals) {
+  document.getElementById('description').textContent = 'PROPOSALS'
+  const proposalsContainer = document.getElementById('contractContainer')
+
+  proposals.forEach((proposal) => {
+    const btnCallback = function () {
+      console.log('POPUP: slected proposal: ', proposal, ' ', hostname)
+      browser.runtime.sendMessage({
+        action: MessageActions.PROPOSAL_ACCEPTED,
+        proposal,
+        hostname
+      })
+      window.close()
+    }
+    const proposalElement = createThreeCHtml(proposal, btnCallback)
+    proposalsContainer.appendChild(proposalElement)
   })
-  populateProposal(proposal.cost, proposal.consent, proposal.content)
 } else if (
   costResolutions &&
   (!contract.cost || contract.cost === 0)
   // &&  contract.consent.isRejectAll()
 ) {
-  initButton(true, 'SEND', function () {
-    const resolutions = {}
-    const sliders = document.querySelectorAll('input[type="range"]')
-    sliders.forEach((slider) => {
-      resolutions[slider.id] = slider.value
-    })
-    browser.runtime.sendMessage({
-      action: MessageActions.COST_PREFERENCES_RECEIVED,
-      resolutions,
-      hostname
-    })
-    window.close()
-  })
-  populateContract(contract.cost, contract.consent, contract.content)
+  document.getElementById('description').textContent = 'CURRENT CONTRACT'
+  const parent = document.getElementById('contractContainer')
+  const contractElement = createThreeCHtml(contract, null)
+  parent.append(contractElement)
+
   populateCostPreferenceSelection(costResolutions)
 } else {
-  populateContract(contract.cost, contract.consent, contract.content)
+  document.getElementById('description').textContent = 'CURRENT CONTRACT'
+  const parent = document.getElementById('contractContainer')
+
+  const contractElement = createThreeCHtml(contract, null)
+  parent.append(contractElement)
+}
+
+function createThreeCHtml (proposalOrContract, btnCallback) {
+  const proposalDiv = document.createElement('div')
+  proposalDiv.classList.add('bottomPaddedContainer')
+
+  const table = document.createElement('table')
+
+  const threeCs = ['Cost', 'Consent', 'Content']
+  for (const c of threeCs) {
+    const row = document.createElement('tr')
+    const label = document.createElement('td')
+    label.textContent = c
+    const resolution = document.createElement('td')
+    let text = ''
+    if (c === 'Cost') {
+      text = proposalOrContract.cost ?? 0
+    } else if (c === 'Consent') {
+      const consentString = proposalOrContract.consent.isRejectAll()
+        ? 'rejected'
+        : proposalOrContract.consent.toString()
+
+      text = consentString
+    } else {
+      text = proposalOrContract.content ?? 100
+    }
+    resolution.textContent = text
+    row.appendChild(label)
+    row.appendChild(resolution)
+    table.appendChild(row)
+  }
+
+  if (proposalOrContract.score) {
+    const row = document.createElement('tr')
+    const label = document.createElement('td')
+    label.textContent = 'Score' // Assign text content to label
+    const resolution = document.createElement('td')
+    resolution.textContent = proposalOrContract.score // Assign text content to resolution
+
+    row.appendChild(label)
+    row.appendChild(resolution)
+    table.appendChild(row)
+  }
+
+  proposalDiv.appendChild(table)
+
+  if (btnCallback) {
+    const acceptButton = document.createElement('button')
+    acceptButton.textContent = 'ACCEPT'
+    acceptButton.style.display = 'block'
+    acceptButton.addEventListener('click', btnCallback)
+
+    proposalDiv.appendChild(acceptButton)
+  }
+
+  return proposalDiv
 }
 
 function initButton (isActive, text, callback) {
@@ -79,27 +163,14 @@ function initButton (isActive, text, callback) {
   document.getElementById('button').addEventListener('click', () => callback())
 }
 
-function populateContract (cost, consent, content) {
-  if (consent.isRejectAll()) {
-    consent = 'rejected all'
-  }
-  populateData(false, cost || 0, consent, content || 'unknown')
-}
-function populateProposal (cost, consent, content) {
-  populateData(true, cost, consent, content)
-}
+function populateContract (contract) {
+  document.getElementById('description').textContent = 'CURRENT CONTRACT'
 
-function populateData (isProposal, cost, consent, content) {
-  let consentString
-  if (consent) {
-    consentString = consent.toString()
-  }
-  document.getElementById('description').textContent = isProposal
-    ? 'New Proposal'
-    : 'Current Contract'
-  document.getElementById('cost').textContent = cost ?? 0
-  document.getElementById('consent').textContent = consentString ?? ''
-  document.getElementById('content').textContent = content ?? 0
+  createThreeCHtml(contract, null)
+
+  // document.getElementById('cost').textContent = contract.cost ?? 0
+  // document.getElementById('consent').textContent = contract.consent
+  // document.getElementById('content').textContent = contract.content ?? 0
 
   // Show or hide the accept button based on the proposal
   // const acceptButton = document.getElementById('button')
@@ -107,12 +178,10 @@ function populateData (isProposal, cost, consent, content) {
 }
 
 function populateCostPreferenceSelection (costResolutions) {
+  const preferencesParent = document.getElementById('preferencesParent')
+  preferencesParent.hidden = false
+
   const preferencesContainer = document.getElementById('preferencesContainer')
-  preferencesContainer.hidden = false
-  const header = document.createElement('h4')
-  // Append the text node to the strong element
-  header.appendChild(document.createTextNode('Cost Preferences'))
-  preferencesContainer.appendChild(header)
 
   // Create and configure the subtitle title
   /* const subtitle = document.createElement('h3')
@@ -176,4 +245,23 @@ function populateCostPreferenceSelection (costResolutions) {
   // document.body.appendChild(table);
 
   preferencesContainer.appendChild(table)
+
+  const sendButton = document.createElement('button')
+  sendButton.textContent = 'SEND'
+  sendButton.style.display = 'block' // Set display property to block
+  sendButton.addEventListener('click', () => {
+    const resolutions = {}
+    const sliders = document.querySelectorAll('input[type="range"]')
+    sliders.forEach((slider) => {
+      resolutions[slider.id] = slider.value
+    })
+    browser.runtime.sendMessage({
+      action: MessageActions.COST_PREFERENCES_RECEIVED,
+      resolutions,
+      hostname
+    })
+    window.close()
+  })
+
+  preferencesContainer.appendChild(sendButton)
 }

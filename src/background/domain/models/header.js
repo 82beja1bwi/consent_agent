@@ -59,6 +59,8 @@ export default class Header {
   toString () {
     let header = 'status=' + this.status.toString() + ' '
 
+    console.log(this.preferences)
+
     if (this.preferences && this.preferences instanceof ScoredPreferences) {
       // TODO: toBase64EncodedJSON for preferences
       header += 'preferences=' + this.preferences.toBase64EncodedJSON() + ' '

@@ -1,5 +1,6 @@
 import Calculator from '../../../src/background/domain/calculator'
 import Consent from '../../../src/background/domain/models/consent'
+import Contract from '../../../src/background/domain/models/contract'
 import Header from '../../../src/background/domain/models/header'
 import ScoredPreferences, { Issue } from '../../../src/background/domain/models/scored_preferences'
 
@@ -180,7 +181,7 @@ describe('Calculator', () => {
   })
 
   describe('calcNashOptimalContract', () => {
-    test('For 2C preferences (content, consent) calculate nash optimal contract', () => {
+    test('For 2C preferences (content, consent) and noOfContracts = 3 return 3 best contracts with Scores', () => {
       const usersScoredPreferences = new ScoredPreferences()
       usersScoredPreferences.consent = {
         relevance: 0.4,
@@ -214,19 +215,121 @@ describe('Calculator', () => {
         }
       }
       const cut = new Calculator()
-      const usersScoringFunction = cut.calcUsersScoringFunction(usersScoredPreferences)
-      const sitesScoringFunction = cut.calcSitesScoringFunction(sitesScoredPreferences)
+      const usersScoringFunction = cut.calcUsersScoringFunction(
+        usersScoredPreferences
+      )
+      const sitesScoringFunction = cut.calcSitesScoringFunction(
+        sitesScoredPreferences
+      )
 
-      const expectedConsent = new Consent()
-      expectedConsent.analytics = true
-      expectedConsent.marketing = true
-      expectedConsent.personalizedAds = true
-
-      expect(cut.calcNashContract(usersScoredPreferences, sitesScoredPreferences, usersScoringFunction, sitesScoringFunction))
-        .toEqual(new Header().setConsent(expectedConsent).setCost('0').setContent('100')
+      expect(
+        cut.calcNashBestContracts(
+          usersScoredPreferences,
+          sitesScoredPreferences,
+          usersScoringFunction,
+          sitesScoringFunction,
+          3
         )
+      ).toEqual([
+        new Contract()
+          .setConsent(
+            new Consent()
+              .setAnalytics(false)
+              .setMarketing(true)
+              .setPersonalizedAds(true)
+          )
+          .setCost('0')
+          .setContent('100')
+          .setScore(5904),
+        new Contract()
+          .setConsent(
+            new Consent()
+              .setAnalytics(true)
+              .setMarketing(true)
+              .setPersonalizedAds(false)
+          )
+          .setCost('0')
+          .setContent('100')
+          .setScore(5984),
+        new Contract()
+          .setConsent(
+            new Consent()
+              .setAnalytics(true)
+              .setMarketing(true)
+              .setPersonalizedAds(true)
+          )
+          .setCost('0')
+          .setContent('100')
+          .setScore(6000)
+
+      ])
     })
-    test('For 3C preferences (cost,content, consent) calculate nash optimal contract', () => {
+
+    test('For 2C preferences (content, consent) and noOfContracts = 1 the nash optimal contract', () => {
+      const usersScoredPreferences = new ScoredPreferences()
+      usersScoredPreferences.consent = {
+        relevance: 0.4,
+        resolutions: {
+          analytics: 0.3,
+          marketing: 0.5,
+          personalizedAds: 0.2
+        }
+      }
+      usersScoredPreferences.content = {
+        relevance: 0.6,
+        resolutions: {
+          100: 1,
+          70: 0.9
+        }
+      }
+      const sitesScoredPreferences = new ScoredPreferences()
+      sitesScoredPreferences.consent = {
+        relevance: 0.6,
+        resolutions: {
+          analytics: 0.3,
+          marketing: 0.5,
+          personalizedAds: 0.2
+        }
+      }
+      sitesScoredPreferences.content = {
+        relevance: 0.4,
+        resolutions: {
+          100: 1,
+          70: 0.6
+        }
+      }
+      const cut = new Calculator()
+      const usersScoringFunction = cut.calcUsersScoringFunction(
+        usersScoredPreferences
+      )
+      const sitesScoringFunction = cut.calcSitesScoringFunction(
+        sitesScoredPreferences
+      )
+
+      expect(
+        cut.calcNashBestContracts(
+          usersScoredPreferences,
+          sitesScoredPreferences,
+          usersScoringFunction,
+          sitesScoringFunction,
+          1
+        )
+      ).toEqual([
+        new Contract()
+          .setConsent(
+            new Consent()
+              .setAnalytics(true)
+              .setMarketing(true)
+              .setPersonalizedAds(true)
+          )
+          .setCost('0')
+          .setContent('100')
+          .setScore(6000)
+
+      ])
+    })
+
+    test('For 3C preferences (cost,content, consent) and noOfContracts = 1 return the nash optimal contract', () => {
       const usersScoredPreferences = new ScoredPreferences()
       usersScoredPreferences.cost = {
         relevance: 0.4,
@@ -276,17 +379,138 @@ describe('Calculator', () => {
         }
       }
       const cut = new Calculator()
-      const usersScoringFunction = cut.calcUsersScoringFunction(usersScoredPreferences)
-      const sitesScoringFunction = cut.calcSitesScoringFunction(sitesScoredPreferences)
+      const usersScoringFunction = cut.calcUsersScoringFunction(
+        usersScoredPreferences
+      )
+      const sitesScoringFunction = cut.calcSitesScoringFunction(
+        sitesScoredPreferences
+      )
 
       const expectedConsent = new Consent()
       expectedConsent.analytics = true
       expectedConsent.marketing = true
       expectedConsent.personalizedAds = false
 
-      expect(cut.calcNashContract(usersScoredPreferences, sitesScoredPreferences, usersScoringFunction, sitesScoringFunction))
-        .toEqual(
-          new Header().setConsent(expectedConsent).setCost('2').setContent('100'))
+      expect(
+        cut.calcNashBestContracts(
+          usersScoredPreferences,
+          sitesScoredPreferences,
+          usersScoringFunction,
+          sitesScoringFunction,
+          1
+        )
+      ).toEqual([
+        new Contract()
+          .setConsent(
+            new Consent()
+              .setAnalytics(true)
+              .setMarketing(true)
+              .setPersonalizedAds(false)
+          )
+          .setCost('2')
+          .setContent('100')
+          .setScore(5880)
+
+      ])
+    })
+    test('For 3C preferences (cost,content, consent) and noOfContracts = 3 return the three best contracts', () => {
+      const usersScoredPreferences = new ScoredPreferences()
+      usersScoredPreferences.cost = {
+        relevance: 0.4,
+        resolutions: {
+          0: 1,
+          2: 0.75,
+          9: 0.25
+        }
+      }
+      usersScoredPreferences.consent = {
+        relevance: 0.2,
+        resolutions: {
+          analytics: 0.2,
+          marketing: 0.1,
+          personalizedAds: 0.7
+        }
+      }
+      usersScoredPreferences.content = {
+        relevance: 0.4,
+        resolutions: {
+          100: 1,
+          70: 0.75
+        }
+      }
+      const sitesScoredPreferences = new ScoredPreferences()
+      sitesScoredPreferences.cost = {
+        relevance: 0.5,
+        resolutions: {
+          0: 0.2,
+          2: 0.6,
+          9: 1
+        }
+      }
+      sitesScoredPreferences.consent = {
+        relevance: 0.2,
+        resolutions: {
+          analytics: 0.3,
+          marketing: 0.2,
+          personalizedAds: 0.5
+        }
+      }
+      sitesScoredPreferences.content = {
+        relevance: 0.3,
+        resolutions: {
+          100: 1,
+          70: 0.5
+        }
+      }
+      const cut = new Calculator()
+      const usersScoringFunction = cut.calcUsersScoringFunction(
+        usersScoredPreferences
+      )
+      const sitesScoringFunction = cut.calcSitesScoringFunction(
+        sitesScoredPreferences
+      )
+
+      expect(
+        cut.calcNashBestContracts(
+          usersScoredPreferences,
+          sitesScoredPreferences,
+          usersScoringFunction,
+          sitesScoringFunction,
+          3
+        )
+      ).toEqual([
+        new Contract()
+          .setConsent(
+            new Consent()
+              .setAnalytics(false)
+              .setMarketing(true)
+              .setPersonalizedAds(false)
+          )
+          .setCost('9')
+          .setContent('100')
+          .setScore(5712),
+
+        new Contract()
+          .setConsent(
+            new Consent()
+              .setAnalytics(true)
+              .setMarketing(true)
+              .setPersonalizedAds(false)
+          )
+          .setCost('2')
+          .setContent('100')
+          .setScore(5880),
+        new Contract()
+          .setConsent(
+            new Consent()
+              .setAnalytics(true)
+              .setMarketing(true)
+              .setPersonalizedAds(false)
+          )
+          .setCost('9')
+          .setContent('100')
+          .setScore(5760)
+      ])
     })
   })
 })

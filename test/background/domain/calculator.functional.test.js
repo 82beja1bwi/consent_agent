@@ -46,11 +46,12 @@ describe('Calculator Functional Unit Test as defined in Thesis', () => {
     const cut = new Calculator()
     const sitesFunction = cut.calcSitesScoringFunction(preferencesOfSite)
     const usersFunction = cut.calcUsersScoringFunction(preferencesOfUser)
-    const result = cut.calcNashContract(
+    const result = cut.calcNashBestContracts(
       preferencesOfUser,
       preferencesOfSite,
       usersFunction,
-      sitesFunction
+      sitesFunction,
+      1
     )
 
     consoleLogSpy.mockRestore()
@@ -82,11 +83,11 @@ describe('Calculator Functional Unit Test as defined in Thesis', () => {
     // Check if any values were not found
     expect(Object.keys(notFoundValues).length === 0).toBe(true)
     // other less relevant assertions
-    expect(result.consent.analytics).toBe(true)
-    expect(result.consent.marketing).toBe(true)
-    expect(result.consent.personalizedAds).toBe(true)
-    expect(result.content).toBe('100')
-    expect(result.cost).toBe('0')
+    expect(result[0].consent.analytics).toBe(true)
+    expect(result[0].consent.marketing).toBe(true)
+    expect(result[0].consent.personalizedAds).toBe(true)
+    expect(result[0].content).toBe('100')
+    expect(result[0].cost).toBe('0')
   })
 
   test('3C result equal to EXCEL Solver', () => {
@@ -144,11 +145,12 @@ describe('Calculator Functional Unit Test as defined in Thesis', () => {
     const cut = new Calculator()
     const sitesFunction = cut.calcSitesScoringFunction(preferencesOfSite)
     const usersFunction = cut.calcUsersScoringFunction(preferencesOfUser)
-    const result = cut.calcNashContract(
+    const result = cut.calcNashBestContracts(
       preferencesOfUser,
       preferencesOfSite,
       usersFunction,
-      sitesFunction
+      sitesFunction,
+      1
     )
 
     consoleLogSpy.mockRestore()
@@ -192,8 +194,8 @@ describe('Calculator Functional Unit Test as defined in Thesis', () => {
     // Check if any values were not found
     expect(Object.keys(notFoundValues).length === 0).toBe(true)
     // other less relevant assertions
-    expect(result.consent.all).toBe(true)
-    expect(result.content).toBe('full')
-    expect(result.cost).toBe('1')
+    expect(result[0].consent.all).toBe(true)
+    expect(result[0].content).toBe('full')
+    expect(result[0].cost).toBe('1')
   })
 })

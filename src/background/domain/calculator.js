@@ -1,5 +1,6 @@
+import MinHeap from './min_heap.js'
 import Consent from './models/consent.js'
-import Header from './models/header.js'
+import Contract from './models/contract.js'
 import ScoredPreferences from './models/scored_preferences.js'
 
 /**
@@ -42,17 +43,22 @@ export default class Calculator {
    * @param {ScoredPreferences} sitesScoredPreferences
    * @param {} usersScoringFunction
    * @param {} sitesScoringFunction
-   * @returns {Header} the header with nash optimal contract
+   * @param {} noOfBestContracts how many best contracts should be returned ? 1 or more?
+   * @returns {[Contract]} the array with at least the nash optimal contract and maybe the next best contracts
    */
-  calcNashContract (
+  calcNashBestContracts (
     usersScoredPreferences,
     sitesScoredPreferences,
     usersScoringFunction,
-    sitesScoringFunction
+    sitesScoringFunction,
+    noOfBestContracts
   ) {
-    let highscore = 0
-    let bestContract = null
-    const costResolutions = sitesScoredPreferences.cost?.resolutions ?? { 0: null }
+    const minHeap = new MinHeap(noOfBestContracts)
+    // let highscore = 0
+    // let bestContract = null
+    const costResolutions = sitesScoredPreferences.cost?.resolutions ?? {
+      0: null
+    }
     const consentCombinations = []
     const limit = Object.keys(
       sitesScoredPreferences.consent.resolutions
@@ -65,7 +71,7 @@ export default class Calculator {
       // costKey only relevant in 3C negotiation
       for (const contentKey in sitesScoredPreferences.content.resolutions) {
         for (let i = 0; i < consentCombinations.length; i++) {
-          const tempProduct = this.#calcContractValue(
+          const score = this.#calcContractValue(
             usersScoringFunction,
             sitesScoringFunction,
             consentCombinations[i],
@@ -75,32 +81,43 @@ export default class Calculator {
             sitesScoredPreferences.cost?.resolutions?.[costKey]
           )
 
-          console.log(tempProduct, '   ', [consentCombinations[i], contentKey, costKey])
+          // shouldnt remove. helpful and actually used in functional tests
+          // could exclude for prod
+          console.log(score, '   ', [
+            consentCombinations[i],
+            contentKey,
+            costKey
+          ])
 
-          if (tempProduct > highscore) {
-            // Found new best contract
-            highscore = tempProduct
-            bestContract = [...consentCombinations[i], contentKey, costKey]
-          }
+          minHeap.add({ score, contract: { consent: [...consentCombinations[i]], content: contentKey, cost: costKey } })
         }
       }
     }
-    console.log('highscore ', highscore)
-    console.log(bestContract)
+    // console.log('highscore ', highscore)
+    // console.log(bestContract)
 
-    // Map interim data model to contract
-    const consent = new Consent()
+    const bestContracts = minHeap.getHeap()
 
-    Object.keys(sitesScoredPreferences.consent.resolutions).forEach(
-      (resolution, index) => {
-        consent[resolution] = bestContract[index]
-      }
-    )
+    for (let i = 0; i < bestContracts.length; i++) {
+      const tempContract = bestContracts[i].contract
+      const consent = new Consent()
 
-    return new Header()
-      .setConsent(consent)
-      .setCost(bestContract[bestContract.length - 1])
-      .setContent(bestContract[bestContract.length - 2])
+      Object.keys(sitesScoredPreferences.consent.resolutions).forEach(
+        (resolution, index) => {
+          consent[resolution] = tempContract.consent[index]
+        }
+      )
+
+      const contract = new Contract()
+        .setCost(tempContract.cost)
+        .setContent(tempContract.content)
+        .setConsent(consent)
+        .setScore(bestContracts[i].score)
+
+      bestContracts[i] = contract
+    }
+
+    return bestContracts
   }
 
   /**

@@ -25,6 +25,15 @@ export class Issue {
   getResolutionsKeys () {
     return Object.keys(this.resolutions)
   }
+
+  /** entity to instance */
+  static fromData (data) {
+    if (!data) return null
+
+    return new Issue()
+      .setRelevance(data.relevance)
+      .setResolutions(data.resolutions)
+  }
 }
 
 export default class ScoredPreferences {
@@ -59,6 +68,10 @@ export default class ScoredPreferences {
   }
 
   toBase64EncodedJSON () {
+    if (this.cost === null) {
+      // dont show null cost in json
+      this.cost = undefined
+    }
     return btoa(JSON.stringify(this))
   }
 
@@ -89,5 +102,19 @@ export default class ScoredPreferences {
     if (totalRelevance !== 1) throw Error('Sum of relevances must be 1')
 
     return scoredPreferences
+  }
+
+  /** entity to instance */
+  static fromData (data) {
+    if (!data) return null
+
+    const cost = Issue.fromData(data.cost)
+    const consent = Issue.fromData(data.consent)
+    const content = Issue.fromData(data.content)
+
+    return new ScoredPreferences()
+      .setCost(cost)
+      .setConsent(consent)
+      .setContent(content)
   }
 }

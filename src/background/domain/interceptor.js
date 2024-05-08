@@ -30,15 +30,28 @@ export default class Interceptor {
 
   async handleGetData (hostname) {
     const proposal = await this.proposalRepository.getProposal(hostname)
-    const contract = this.contractRepository.getContract(hostname)
-    const costResolutions = this.preferenceManager
-      .getSitesPreferences(hostname, false)
-      ?.cost.getResolutionsKeys()
+    let proposals = null
+
+    if (proposal) {
+      const is2C = !!((!proposal.cost || proposal?.cost === 0))
+      proposals = await this.negotiator.createSimilarAlternatives(
+        3,
+        is2C,
+        hostname
+      )
+    }
+
+    const contract = await this.contractRepository.getContract(hostname)
+    const sitesPrefs = await this.preferenceManager.getSitesPreferences(
+      hostname,
+      false
+    )
+    const costResolutions = sitesPrefs?.cost.getResolutionsKeys()
     // const costPreferences = {} // [0, 2, 8, 10]
-    return { proposal, contract, costResolutions }
+    return { proposals, contract, costResolutions }
   }
 
-  handleUpdatedCostPreferences (hostname, resolutions) {
+  async handleUpdatedCostPreferences (hostname, resolutions) {
     // resolutions from likert points to decimals
     // from {analytics: 1, marketing: 6,...}
     // to {analytics: 0.5, marketing 0.1, ...}
@@ -55,7 +68,7 @@ export default class Interceptor {
       resolutions[key] = points[i] / totalGrades
     }
 
-    const prefs = this.preferenceManager.createUsers3CPreferences(
+    const prefs = await this.preferenceManager.createUsers3CPreferences(
       hostname,
       resolutions
     )
@@ -82,12 +95,12 @@ export default class Interceptor {
   /**
    * For a certain host an initial contract is created, stored and returned
    * @param {*} hostName
-   * @returns {Header} header containing an initial contract proposal
+   * @returns Header header containing an initial contract proposal
    */
   async onBeforeSendHeaders (hostName) {
     let header = null
 
-    const contract = this.contractRepository.getContract(hostName)
+    const contract = await this.contractRepository.getContract(hostName)
 
     if (!contract) {
       console.log('No contract found for host:', hostName)
@@ -97,7 +110,7 @@ export default class Interceptor {
       header = this.negotiator.prepareInitialOffer()
 
       // Set up and store initial contract
-      this.contractRepository.setContract(
+      await this.contractRepository.setContract(
         new Contract().setHostName(hostName).setConsent(header.consent)
       )
 
@@ -111,27 +124,30 @@ export default class Interceptor {
    * A) prepare a counter offer for the website
    * or B) prepare a contract proposal for the user
    * @param {*} header
-   * @returns {Header | Proposal | Contract}
+   * @returns Header | Proposal | Contract
    */
   async onHeadersReceived (header, hostName) {
     let result = null
 
+    console.log('2 switch status ', header.status)
     switch (header.status) {
       case NegotiationStatus.EXCHANGE:
-        result = this.negotiator.prepareCounteroffer(header, hostName)
+        result = await this.negotiator.prepareCounteroffer(header, hostName)
         break
       case NegotiationStatus.NEGOTIATION:
-        if (this.negotiator.couldBeAttractiveForUser(header, hostName)) {
+        { const couldBeAttractive = await this.negotiator.couldBeAttractiveForUser(header, hostName)
+          if (couldBeAttractive) {
           // UI: present to user
-          result = new Proposal()
-            .setHostName(hostName)
-            .setCost(header.cost)
-            .setConsent(header.consent)
-            .setContent(header.content)
-            .setUserHasAccepted(false)
-        } else {
+            result = new Proposal()
+              .setHostName(hostName)
+              .setCost(header.cost)
+              .setConsent(header.consent)
+              .setContent(header.content)
+              .setUserHasAccepted(false)
+          } else {
           // calculate counter offer
-          result = this.negotiator.prepareCounteroffer(header, hostName)
+            result = await this.negotiator.prepareCounteroffer(header, hostName)
+          }
         }
         break
       case NegotiationStatus.ACCEPTED:

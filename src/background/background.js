@@ -64,20 +64,29 @@ function handleMessage (request, sender, sendResponse) {
         .then((response) => sendResponse(response))
       break
     case MessageActions.COST_PREFERENCES_RECEIVED:
-      {
-        const header = interceptor.handleUpdatedCostPreferences(
-          hostname,
-          request.resolutions
+      interceptor
+        .handleUpdatedCostPreferences(hostname, request.resolutions)
+        .then((header) => Object.assign({}, { ADPC: header.toString() }))
+        .then((headers) =>
+          getURL().then((url) => {
+            console.log('now fetching URL') // const url = new URL(details.url, details.originUrl)
+            fetch(url, { headers })
+          })
         )
-        const headers = {
-          ADPC: header.toString()
-        }
+      // {
+      //   const header = interceptor.handleUpdatedCostPreferences(
+      //     hostname,
+      //     request.resolutions
+      //   )
+      //   const headers = {
+      //     ADPC: header.toString()
+      //   }
 
-        getURL().then((url) => {
-          console.log('now fetching URL') // const url = new URL(details.url, details.originUrl)
-          fetch(url, { headers })
-        })
-      }
+      //   getURL().then((url) => {
+      //     console.log('now fetching URL') // const url = new URL(details.url, details.originUrl)
+      //     fetch(url, { headers })
+      //   })
+      // }
 
       break
     default:
@@ -95,9 +104,7 @@ browser.runtime.onMessage.addListener(handleMessage)
 browser.webRequest.onBeforeSendHeaders.addListener(
   async function (details) {
     try {
-      console.log(details)
       if (details.type !== 'main_frame') return // ignore requests not going to the main host
-      console.log('inside ', details)
 
       const hostname = new URL(details.url)?.hostname
 
@@ -142,11 +149,11 @@ browser.webRequest.onHeadersReceived.addListener(
       )
       if (headerString) {
         const header = Header.fromString(headerString.value)
-        console.log('Parsed Header ', header)
 
-        const hostName = new URL(details.url)?.hostname // await getHostname()
+        const hostName = new URL(details.url)?.hostname
+        console.log('1 interceptor in')
         const result = await interceptor.onHeadersReceived(header, hostName)
-
+        console.log('RESULT FOR ON HEADERS RECEIVED: ', result)
         switch (result.constructor) {
           case Header:
             {
@@ -154,20 +161,16 @@ browser.webRequest.onHeadersReceived.addListener(
               const headers = {
                 ADPC: result.toString()
               }
-              console.log('RES: WILL SEND HEADER:', headers)
               const url = new URL(details.url, details.originUrl)
               fetch(url, { headers })
             }
             break
           case Proposal:
-            console.log('RES: SET PROPOSAL: ', result)
-
             await proposalRepository.setProposal(result)
             break
           case Contract:
-            console.log('WILL NOW STORE CREATED CONTRACT: ', result)
-            proposalRepository.deleteProposal(hostName)
-            contractRepository.setContract(result)
+            await proposalRepository.deleteProposal(hostName)
+            await contractRepository.setContract(result)
             browser.tabs
               .query({ url: `*://${hostName}/*` })
               .then((tabs) => {

@@ -42,11 +42,11 @@ export default class PreferenceManager {
    * @param {String} hostName
    * @param {Boolean} is2C
    * @param {ScoredPreferences} sitesScoredPreferences
-   * @returns {ScoredPreferences}
+   * @returns ScoredPreferences
    */
-  getUsersPreferences (hostName, is2C, sitesScoredPreferences) {
+  async getUsersPreferences (hostName, is2C, sitesScoredPreferences) {
     let modified = false
-    const scoredPreferences = this.preferenceRepository.getUsersPreferences(
+    const scoredPreferences = await this.preferenceRepository.getUsersPreferences(
       hostName,
       is2C
     )
@@ -98,9 +98,9 @@ export default class PreferenceManager {
     return scoredPreferences
   }
 
-  createUsers3CPreferences (hostname, costResolutions) {
+  async createUsers3CPreferences (hostname, costResolutions) {
     const is2C = true
-    const prefs = this.preferenceRepository.getUsersPreferences(
+    const prefs = await this.preferenceRepository.getUsersPreferences(
       hostname,
       is2C
     )
@@ -125,10 +125,10 @@ export default class PreferenceManager {
    *
    * @param {String} hostName
    * @param {Boolean} is2C
-   * @returns {ScoredPreferences}
+   * @returns ScoredPreferences
    */
-  getSitesPreferences (hostName, is2C) {
-    const scoredPreferences = this.preferenceRepository.getSitesPreferences(
+  async getSitesPreferences (hostName, is2C) {
+    const scoredPreferences = await this.preferenceRepository.getSitesPreferences(
       hostName,
       is2C
     )
@@ -141,8 +141,8 @@ export default class PreferenceManager {
    * @param {String} hostName
    * @param {ScoredPreferences} preferences
    */
-  setSitesPreferences (hostName, preferences) {
-    this.preferenceRepository.setSitesPreferences(hostName, preferences)
+  async setSitesPreferences (hostName, preferences) {
+    await this.preferenceRepository.setSitesPreferences(hostName, preferences)
   }
 
   #siteHasDifferentConsentResolutions = (

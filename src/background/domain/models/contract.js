@@ -9,12 +9,14 @@ export default class Contract {
    * @param {Consent} consent
    * @param {number} cost
    * @param {number} content
+   * @param score
    */
-  constructor (hostName, consent, cost, content) {
+  constructor (hostName, consent, cost, content, score) {
     this.hostName = hostName
     this.consent = consent
     this.cost = cost
     this.content = content
+    this.score = score
   }
 
   setHostName (value) {
@@ -37,6 +39,12 @@ export default class Contract {
     return this
   }
 
+  setScore (value) {
+    this.score = value
+    return this
+  }
+
+  /** entity to instance */
   static fromData (data) {
     if (!data) return null
 
@@ -47,5 +55,6 @@ export default class Contract {
       .setConsent(consent)
       .setCost(data.cost)
       .setContent(data.content)
+      .setScore(data.score)
   }
 }

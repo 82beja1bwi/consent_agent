@@ -1,8 +1,8 @@
 import Contract from './contract.js'
 
 export default class Proposal extends Contract {
-  constructor (hostName, consent, cost, content, userHasAccepted) {
-    super(hostName, consent, cost, content)
+  constructor (hostName, consent, cost, content, score, userHasAccepted) {
+    super(hostName, consent, cost, content, score)
     this.userHasAccepted = userHasAccepted
   }
 
@@ -12,6 +12,7 @@ export default class Proposal extends Contract {
     return this
   }
 
+  /** entity to instance */
   static fromData (data) {
     if (!data) return null
 
@@ -21,6 +22,7 @@ export default class Proposal extends Contract {
       .setConsent(contract.consent)
       .setContent(contract.content)
       .setCost(contract.cost)
+      .setScore(contract.score)
       .setUserHasAccepted(data.userHasAccepted)
   }
 }
