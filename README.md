@@ -1,6 +1,10 @@
 # Consent Agent
-## Overview
+//intro and overview
+## Video Demonstration
+video here
+## Architecture
 //Diagrams and small texts
+
 ## Usage
 Before proceeding make sure you have installed the following
 - JavaScript (ES6)
