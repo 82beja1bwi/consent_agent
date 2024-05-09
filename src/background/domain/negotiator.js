@@ -180,7 +180,7 @@ export default class Negotiator {
     )
 
     // Calculate the optimal contract, in this implementation the Nash contract
-    const result = this.calculator.calcNashBestContracts(
+    const result = this.calculator.calcNashContracts(
       usersScoredPreferences,
       sitesScoredPreferences,
       usersScoringFunction,

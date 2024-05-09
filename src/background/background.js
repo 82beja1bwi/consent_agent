@@ -12,8 +12,7 @@ import Proposal from './domain/models/proposal.js'
 export const MessageActions = {
   PROPOSAL_ACCEPTED: 1,
   GET_DATA: 2,
-  COST_PREFERENCES_RECEIVED: 3,
-  IMITATE_RELOAD: 4
+  COST_PREFERENCES_RECEIVED: 3
 }
 
 badgeTextManager.registerListeners()

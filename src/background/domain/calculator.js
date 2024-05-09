@@ -46,7 +46,7 @@ export default class Calculator {
    * @param {} noOfBestContracts how many best contracts should be returned ? 1 or more?
    * @returns {[Contract]} the array with at least the nash optimal contract and maybe the next best contracts
    */
-  calcNashBestContracts (
+  calcNashContracts (
     usersScoredPreferences,
     sitesScoredPreferences,
     usersScoringFunction,
