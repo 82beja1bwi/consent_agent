@@ -1,7 +1,5 @@
 # Consent Agent
-//intro and overview
-FIREFOX ONLY 
--> SETUP TODO: wie in firefox hochladen
+A browser extension (Firefox only) that acts as a user agent in (nearly) automated negotiations of informed consent.
 
 ## Video Demonstration
 
@@ -75,12 +73,12 @@ Before proceeding make sure you have installed the following
 2. Install and set up [webpack](https://webpack.js.org/) for bundling the project. 
 3. Install dependencies using `npm install`.
 4. Run `npm run build` to bundle the files and start the service. 
-5. Access the service through HTTP requests, utilizing the provided endpoints.
+5. (Firefox) manually upload the browser extension by navigating to `about:debugging#/runtime/this-firefox` in your Firefox browser.
 
 ## Project Structure
 ### Main Folders and Files
-- `dist`: Contains compiled and bundled files after the storage implementation and UI testing.
-- `src`: Includes the main source code files for the project after implementing storage and testing the UI.
+- `dist`: Webpack bundled distribution.
+- `src`: The source code of popup and background scripts. 
 - `test`: Holds files for unit testing.
 - `manifest.json`: Includes updates related to badge management and refactoring of `background.js`.
 
