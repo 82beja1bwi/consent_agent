@@ -9,27 +9,24 @@ https://github.com/82beja1bwi/consent_agent/assets/50909186/8ee570c8-fc3a-43cc-8
 
 ## Concept & Design
 
-This thesis proposed a privacy protocol based on a negotiation protocol. This repository holds the user's agent that can handle negotiations with sites implementing the protocol. A showcasing website can be found in https://github.com/82beja1bwi/newssite.git or the video demonstration below. 
+This thesis proposed a privacy protocol based on a negotiation protocol. This repository holds the user's agent that can handle negotiations with sites that implement the protocol. A showcasing website can be found in https://github.com/82beja1bwi/newssite.git or the video demonstration above. 
 
 ### Vision
 
 Privacy protocols have been broadly researched from the three lenses of behavior, design, and legal analysis. From a behavior perspective, automation and standardization of the interaction should reduce the load on the user (“kill the banner” argumentation). From a design and legal perspective, all lifecycle actions are equally accessible (s. ADPC). Further, the model assumes implied consent with default privacy settings (opt-in) to allow automation and is designed by the regulator (GDPR). From a negotiation perspective, win-win negotiations are enabled by pushing inefficient or unfair contracts towards the Nash equilibrium.
 
 ### Negotiation Protocol
-The protocol is 
 
 During the negotiation the parties exchange custom http-header `ADPC` with the following content:
 - `Status`: exchange/negotiation/accepted (failure tbd)
 - `Preferences`: base64 encoded JSON
 - `Cost`: amount to be paid in Eur
-- `Consent`: analytics, marketing, personalizedContent, personalizedAds, externalContent, identification)
-- `Content`: list of possible content access options (in % of total content)
+- `Consent`: analytics, marketing, personalizedContent, personalizedAds, externalContent, identification
+- `Content`: the granted content in percent (%)
 
 An example negotiation could have the following message exchange:
 
 ![image](https://github.com/82beja1bwi/consent_agent/assets/50909186/0e3f332b-ec8b-422b-adec-020c1f04e2b6)
-
-#### Overview
 
 Assumptions:
 - Contextual advertising is an alternative to personalized advertising and works without consent requests.
@@ -48,8 +45,9 @@ From a high-level perspective, the user agent has four main use cases: User Feed
 4. (FUTURE WORK) Preferences Management: Manage privacy preferences which are the default preferences when the agent enters a negotiation.
 
 #### Flow Diagrams
-![image](https://github.com/82beja1bwi/consent_agent/assets/50909186/ae6c99c5-6a71-4ff3-85aa-e6dc2c0838ca)
+The agent implements two main processes triggered on the interception of http-requests and http-responses. Http-requests will be enriched with the custom header to initiate a negotiation. Http-responses containing the custom header can e.g. lead to counteroffers or proposals for the user.
 
+![image](https://github.com/82beja1bwi/consent_agent/assets/50909186/ae6c99c5-6a71-4ff3-85aa-e6dc2c0838ca)
 
 ## Implementation
 ### Data Model
