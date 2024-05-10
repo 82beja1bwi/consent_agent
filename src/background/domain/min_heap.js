@@ -61,13 +61,6 @@ export default class MinHeap {
     this.heap[indexTwo] = temp
   }
 
-  peek () {
-    if (this.heap.length === 0) {
-      return null
-    }
-    return this.heap[0]
-  }
-
   // Modified to
   // - accept {score, Contract} objects
   // - add and potentially remove if over limit of elements

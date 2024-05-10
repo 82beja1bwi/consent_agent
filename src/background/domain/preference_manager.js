@@ -18,9 +18,9 @@ export default class PreferenceManager {
    * Initialize the preferences of a user for a certain site.
    * Call when sending the first request to the site
    * @param {String} hostName
-   * @return {ScoredPreferences}
+   * @return ScoredPreferences
    */
-  initUsersPreferences (hostName) {
+  async initUsersPreferences (hostName) {
     const scoredPreferences = new ScoredPreferences().setConsent(
       new Issue().setRelevance(1).setResolutions({
         analytics: 0.2,
@@ -32,7 +32,7 @@ export default class PreferenceManager {
       })
     )
     // store
-    this.preferenceRepository.setUsers2CPrefs(hostName, scoredPreferences)
+    await this.preferenceRepository.setUsers2CPreferences(hostName, scoredPreferences)
 
     return scoredPreferences
   }
@@ -91,13 +91,19 @@ export default class PreferenceManager {
     if (modified) {
       // UPDATE REPO
       is2C
-        ? this.preferenceRepository.setUsers2CPrefs(hostName, scoredPreferences)
-        : this.preferenceRepository.setUsers3CPrefs(hostName, scoredPreferences)
+        ? this.preferenceRepository.setUsers2CPreferences(hostName, scoredPreferences)
+        : this.preferenceRepository.setUsers3CPreferences(hostName, scoredPreferences)
     }
 
     return scoredPreferences
   }
 
+  /**
+   *
+   * @param {String} hostname
+   * @param {Object} costResolutions {0:1, ..., 9:0} decimal resolutioons as seen in ScoredPrefs
+   * @returns
+   */
   async createUsers3CPreferences (hostname, costResolutions) {
     const is2C = true
     const prefs = await this.preferenceRepository.getUsersPreferences(
@@ -108,8 +114,6 @@ export default class PreferenceManager {
     if (!prefs) {
       throw new Error('No User Preferences for host: ', hostname)
     }
-    // todo: remove test code
-    // prefs.setContent(new Issue())
 
     prefs.setCost(
       new Issue().setRelevance(0.4).setResolutions(costResolutions)
@@ -117,7 +121,7 @@ export default class PreferenceManager {
     prefs.consent.setRelevance(0.2)
     prefs.content.setRelevance(0.4)
 
-    this.preferenceRepository.setUsers3CPrefs(hostname, prefs)
+    await this.preferenceRepository.setUsers3CPreferences(hostname, prefs)
     return prefs
   }
 

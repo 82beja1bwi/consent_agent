@@ -42,7 +42,9 @@ describe('ScoredPreferences', () => {
         }
       }
       // Call the fromJSON method to create an instance from JSON data
-      const preferences = ScoredPreferences.fromBase64EncodedJSON(btoa(JSON.stringify(input)))
+      const preferences = ScoredPreferences.fromJSON(
+        JSON.parse(JSON.stringify(input))
+      )
 
       // Verify that the instance is created with the correct properties
       expect(preferences).toEqual(input)
@@ -74,8 +76,8 @@ describe('ScoredPreferences', () => {
         }
       }
       // Call the fromJSON method to create an instance from JSON data
-      const preferences = ScoredPreferences.fromBase64EncodedJSON(
-        btoa(JSON.stringify(input))
+      const preferences = ScoredPreferences.fromJSON(
+        JSON.parse(JSON.stringify(input))
       )
 
       // Verify that the instance is created with the correct properties
@@ -95,7 +97,7 @@ describe('ScoredPreferences', () => {
       }
 
       expect(() => {
-        ScoredPreferences.fromBase64EncodedJSON(btoa(JSON.stringify(input)))
+        ScoredPreferences.fromJSON(JSON.parse(JSON.stringify(input)))
       }).toThrow(Error)
     })
 
@@ -106,8 +108,8 @@ describe('ScoredPreferences', () => {
       }
 
       expect(() => {
-        ScoredPreferences.fromBase64EncodedJSON(btoa(JSON.stringify(input)))
-      }).toThrow(Error)
+        ScoredPreferences.fromJSON(btoa(JSON.stringify(input)))
+      }).toThrow(Error('Unknown issue \'0\'.'))
     })
 
     test('Accepts preferences with only consent and content', () => {
@@ -130,8 +132,8 @@ describe('ScoredPreferences', () => {
       }
 
       // Call the fromJSON method to create an instance from JSON data
-      const preferences = ScoredPreferences.fromBase64EncodedJSON(
-        btoa(JSON.stringify(input))
+      const preferences = ScoredPreferences.fromJSON(
+        JSON.parse(JSON.stringify(input))
       )
 
       // Verify that the instance is created with the correct properties
@@ -154,7 +156,28 @@ describe('ScoredPreferences', () => {
       })
     })
 
-    test('should throw an error for invalid JSON data', () => {
+    test('throws if sum of relevances != 1', () => {
+      const input = {
+        consent: {
+          relevance: 1,
+          resolutions: {
+            analytics: 0.5,
+            marketing: 0.5
+          }
+        },
+        content: {
+          relevance: 1,
+          resolutions: {
+            100: 1,
+            70: 0.8
+          }
+        }
+      }
+
+      expect(() => {
+        ScoredPreferences.fromJSON(JSON.parse(JSON.stringify(input)))
+      }).toThrow(Error('Sum of relevances must be 1'))
+
       // Invalid JSON data
       /* const invalidJsonData = 'invalid JSON';
 
@@ -163,6 +186,50 @@ describe('ScoredPreferences', () => {
 
              // Verify that it throws an error
              expect(createInstance).toThrowError(SyntaxError); */
+    })
+  })
+
+  describe('fromData', () => {
+    test('should create an instance of ScoredPreferences from plain obj', () => {
+      const data = {
+        cost: {
+          relevance: 0.2,
+          resolutions: { 0: 1 }
+        },
+        consent: {
+          relevance: 0.5,
+          resolutions: {
+            analytics: 1
+          }
+        },
+        content: {
+          relevance: 0.3,
+          resolutions: {
+            100: 1
+          }
+        }
+      }
+
+      const actual = ScoredPreferences.fromData(data)
+
+      expect(actual).toEqual(
+        new ScoredPreferences()
+          .setConsent(new Issue().setRelevance(0.5).setResolutions({ analytics: 1 }))
+          .setCost(new Issue().setRelevance(0.2).setResolutions({ 0: 1 }))
+          .setContent(new Issue().setRelevance(0.3).setResolutions({ 100: 1 }))
+      )
+    })
+    test('if any is null set it to null', () => {
+      const data = {}
+
+      const actual = ScoredPreferences.fromData(data)
+
+      expect(actual).toEqual(
+        new ScoredPreferences()
+          .setConsent(null)
+          .setCost(null)
+          .setContent(null)
+      )
     })
   })
 })

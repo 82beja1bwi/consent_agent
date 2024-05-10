@@ -46,7 +46,7 @@ describe('Calculator Functional Unit Test as defined in Thesis', () => {
     const cut = new Calculator()
     const sitesFunction = cut.calcSitesScoringFunction(preferencesOfSite)
     const usersFunction = cut.calcUsersScoringFunction(preferencesOfUser)
-    const result = cut.calcNashBestContracts(
+    const result = cut.calcNashContracts(
       preferencesOfUser,
       preferencesOfSite,
       usersFunction,
@@ -145,7 +145,7 @@ describe('Calculator Functional Unit Test as defined in Thesis', () => {
     const cut = new Calculator()
     const sitesFunction = cut.calcSitesScoringFunction(preferencesOfSite)
     const usersFunction = cut.calcUsersScoringFunction(preferencesOfUser)
-    const result = cut.calcNashBestContracts(
+    const result = cut.calcNashContracts(
       preferencesOfUser,
       preferencesOfSite,
       usersFunction,

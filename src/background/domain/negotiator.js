@@ -115,7 +115,6 @@ export default class Negotiator {
    * @returns Header a new header
    */
   async prepareCounteroffer (header, hostName) {
-    console.log('3 preparing counteroffer')
     if (!(header instanceof Header)) {
       throw new Error('Expected header to be an instance of Header')
     }
@@ -141,17 +140,13 @@ export default class Negotiator {
         sitesScoredPreferences
       )
 
-    console.log('Got Preferences', usersScoredPreferences, sitesScoredPreferences)
-
     const result = this.#getBestContracts(
       1,
       usersScoredPreferences,
       sitesScoredPreferences
     )
-    console.log('best Contracts ', result)
 
     const nashContract = result[0]
-    console.log('nash Contract ', result)
 
     const counterOfferHeader = new Header()
 
@@ -164,8 +159,6 @@ export default class Negotiator {
       .setConsent(nashContract.consent)
       .setCost(nashContract.cost)
       .setContent(nashContract.content)
-
-    console.log('Counter Offer Header ', counterOfferHeader)
 
     return counterOfferHeader
   }

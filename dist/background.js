@@ -18694,8 +18694,8 @@ var Calculator = /*#__PURE__*/function () {
      * @returns {[Contract]} the array with at least the nash optimal contract and maybe the next best contracts
      */
   }, {
-    key: "calcNashBestContracts",
-    value: function calcNashBestContracts(usersScoredPreferences, sitesScoredPreferences, usersScoringFunction, sitesScoringFunction, noOfBestContracts) {
+    key: "calcNashContracts",
+    value: function calcNashContracts(usersScoredPreferences, sitesScoredPreferences, usersScoringFunction, sitesScoringFunction, noOfBestContracts) {
       var _sitesScoredPreferenc, _sitesScoredPreferenc2;
       var minHeap = new _min_heap_js__WEBPACK_IMPORTED_MODULE_0__["default"](noOfBestContracts);
       // let highscore = 0
@@ -18852,32 +18852,46 @@ var Interceptor = /*#__PURE__*/function () {
       }
       return handleGetData;
     }()
+    /**
+     * maps the UI scale (likert-like) to a decimal scale as seen in ScoredPreferences
+     *
+     * likert scale from 1 worst to 6 best
+     *
+     * from {0 Eur: 6, 1 Eur: 5,..., 20 Eur: 1}
+     * to {0 Eur: 1, 1 Eur 0.2, ...}
+     *
+     * @param {String} hostname mail.google.com
+     * @param {Object} resolutions {0: 6, 1: 5,...} key is EUR, value is score on likert (6 best, 1 worst)
+     * @returns Header ...{0: 1, 1: 0.8, ...}
+     */
   }, {
     key: "handleUpdatedCostPreferences",
-    value: function () {
+    value: (function () {
       var _handleUpdatedCostPreferences = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee2(hostname, resolutions) {
-        var points, totalGrades, keys, i, key, prefs;
+        var mapping, key, prefs;
         return _regeneratorRuntime().wrap(function _callee2$(_context2) {
           while (1) switch (_context2.prev = _context2.next) {
             case 0:
-              // resolutions from likert points to decimals
-              // from {analytics: 1, marketing: 6,...}
-              // to {analytics: 0.5, marketing 0.1, ...}
-              points = Object.values(resolutions); // Calculate the total sum of grades
-              totalGrades = points.reduce(function (sum, grade) {
-                return sum + parseInt(grade);
-              }, 0); // Calculate the percentage for each option
-              keys = Object.keys(resolutions);
-              for (i = 0; i < keys.length; i++) {
-                key = keys[i];
-                resolutions[key] = points[i] / totalGrades;
+              // read like
+              // 'likert score 1 results in a preference score of 0' -> least desired
+              // 'likert score 6 results in a preference score of 1' -> most desired
+              mapping = {
+                1: 0,
+                2: 0.2,
+                3: 0.4,
+                4: 0.6,
+                5: 0.8,
+                6: 1
+              };
+              for (key in resolutions) {
+                resolutions[key] = mapping[resolutions[key]];
               }
-              _context2.next = 6;
+              _context2.next = 4;
               return this.preferenceManager.createUsers3CPreferences(hostname, resolutions);
-            case 6:
+            case 4:
               prefs = _context2.sent;
               return _context2.abrupt("return", new _models_header_js__WEBPACK_IMPORTED_MODULE_1__["default"]().setStatus(_models_header_js__WEBPACK_IMPORTED_MODULE_1__.NegotiationStatus.EXCHANGE).setPreferences(prefs));
-            case 8:
+            case 6:
             case "end":
               return _context2.stop();
           }
@@ -18887,7 +18901,7 @@ var Interceptor = /*#__PURE__*/function () {
         return _handleUpdatedCostPreferences.apply(this, arguments);
       }
       return handleUpdatedCostPreferences;
-    }()
+    }())
   }, {
     key: "handleAcceptedProposal",
     value: function () {
@@ -18932,22 +18946,24 @@ var Interceptor = /*#__PURE__*/function () {
             case 3:
               contract = _context4.sent;
               if (contract) {
-                _context4.next = 11;
+                _context4.next = 12;
                 break;
               }
               console.log('No contract found for host:', hostName);
               // Construct initial header
-              this.preferenceManager.initUsersPreferences(hostName);
+              _context4.next = 8;
+              return this.preferenceManager.initUsersPreferences(hostName);
+            case 8:
               header = this.negotiator.prepareInitialOffer();
 
               // Set up and store initial contract
-              _context4.next = 10;
+              _context4.next = 11;
               return this.contractRepository.setContract(new _models_contract_js__WEBPACK_IMPORTED_MODULE_0__["default"]().setHostName(hostName).setConsent(header.consent));
-            case 10:
-              console.log('header intercepted and modified: ', header.toString());
             case 11:
-              return _context4.abrupt("return", header);
+              console.log('header intercepted and modified: ', header.toString());
             case 12:
+              return _context4.abrupt("return", header);
+            case 13:
             case "end":
               return _context4.stop();
           }
@@ -19130,14 +19146,6 @@ var MinHeap = /*#__PURE__*/function () {
       var temp = this.heap[indexOne];
       this.heap[indexOne] = this.heap[indexTwo];
       this.heap[indexTwo] = temp;
-    }
-  }, {
-    key: "peek",
-    value: function peek() {
-      if (this.heap.length === 0) {
-        return null;
-      }
-      return this.heap[0];
     }
 
     // Modified to
@@ -19687,6 +19695,12 @@ var ScoredPreferences = /*#__PURE__*/function () {
       }
       return btoa(JSON.stringify(this));
     }
+
+    /**
+     *
+     * @param {*} json a JSON.parse(string)
+     * @returns
+     */
   }], [{
     key: "fromJSON",
     value: function fromJSON(json) {
@@ -19891,44 +19905,39 @@ var Negotiator = /*#__PURE__*/function () {
         return _regeneratorRuntime().wrap(function _callee3$(_context3) {
           while (1) switch (_context3.prev = _context3.next) {
             case 0:
-              console.log('3 preparing counteroffer');
               if (header instanceof _models_header_js__WEBPACK_IMPORTED_MODULE_4__["default"]) {
-                _context3.next = 3;
+                _context3.next = 2;
                 break;
               }
               throw new Error('Expected header to be an instance of Header');
-            case 3:
+            case 2:
               // eslint-disable-next-line no-unneeded-ternary
               is2C = !header.cost || (header === null || header === void 0 ? void 0 : header.cost) === 0 ? true : false;
-              _context3.next = 6;
+              _context3.next = 5;
               return this.preferenceManager.getSitesPreferences(hostName, is2C);
-            case 6:
+            case 5:
               sitesScoredPreferences = _context3.sent;
               if (sitesScoredPreferences) {
-                _context3.next = 11;
+                _context3.next = 10;
                 break;
               }
               sitesScoredPreferences = header.preferences[0];
-              _context3.next = 11;
+              _context3.next = 10;
               return this.preferenceManager.setSitesPreferences(hostName, header.preferences);
-            case 11:
-              _context3.next = 13;
+            case 10:
+              _context3.next = 12;
               return this.preferenceManager.getUsersPreferences(hostName, is2C, sitesScoredPreferences);
-            case 13:
+            case 12:
               usersScoredPreferences = _context3.sent;
-              console.log('Got Preferences', usersScoredPreferences, sitesScoredPreferences);
               result = _assertClassBrand(_Negotiator_brand, this, _getBestContracts).call(this, 1, usersScoredPreferences, sitesScoredPreferences);
-              console.log('best Contracts ', result);
               nashContract = result[0];
-              console.log('nash Contract ', result);
               counterOfferHeader = new _models_header_js__WEBPACK_IMPORTED_MODULE_4__["default"]();
               if (header.status === _models_header_js__WEBPACK_IMPORTED_MODULE_4__.NegotiationStatus.EXCHANGE) {
                 counterOfferHeader.setPreferences(usersScoredPreferences);
               }
               counterOfferHeader.setStatus(_models_header_js__WEBPACK_IMPORTED_MODULE_4__.NegotiationStatus.NEGOTIATION).setConsent(nashContract.consent).setCost(nashContract.cost).setContent(nashContract.content);
-              console.log('Counter Offer Header ', counterOfferHeader);
               return _context3.abrupt("return", counterOfferHeader);
-            case 24:
+            case 19:
             case "end":
               return _context3.stop();
           }
@@ -19947,7 +19956,7 @@ function _getBestContracts(amount, usersScoredPreferences, sitesScoredPreference
   var sitesScoringFunction = this.calculator.calcSitesScoringFunction(sitesScoredPreferences);
 
   // Calculate the optimal contract, in this implementation the Nash contract
-  var result = this.calculator.calcNashBestContracts(usersScoredPreferences, sitesScoredPreferences, usersScoringFunction, sitesScoringFunction, amount);
+  var result = this.calculator.calcNashContracts(usersScoredPreferences, sitesScoredPreferences, usersScoringFunction, sitesScoringFunction, amount);
   return result;
 }
 
@@ -20070,24 +20079,39 @@ var PreferenceManager = /*#__PURE__*/function () {
    * Initialize the preferences of a user for a certain site.
    * Call when sending the first request to the site
    * @param {String} hostName
-   * @return {ScoredPreferences}
+   * @return ScoredPreferences
    */
   return _createClass(PreferenceManager, [{
     key: "initUsersPreferences",
-    value: function initUsersPreferences(hostName) {
-      var scoredPreferences = new _models_scored_preferences_js__WEBPACK_IMPORTED_MODULE_2__["default"]().setConsent(new _models_scored_preferences_js__WEBPACK_IMPORTED_MODULE_2__.Issue().setRelevance(1).setResolutions({
-        analytics: 0.2,
-        marketing: 0.1,
-        personalizedContent: 0.1,
-        personalizedAds: 0.4,
-        externalContent: 0.1,
-        identification: 0.1
+    value: (function () {
+      var _initUsersPreferences = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee(hostName) {
+        var scoredPreferences;
+        return _regeneratorRuntime().wrap(function _callee$(_context) {
+          while (1) switch (_context.prev = _context.next) {
+            case 0:
+              scoredPreferences = new _models_scored_preferences_js__WEBPACK_IMPORTED_MODULE_2__["default"]().setConsent(new _models_scored_preferences_js__WEBPACK_IMPORTED_MODULE_2__.Issue().setRelevance(1).setResolutions({
+                analytics: 0.2,
+                marketing: 0.1,
+                personalizedContent: 0.1,
+                personalizedAds: 0.4,
+                externalContent: 0.1,
+                identification: 0.1
+              })); // store
+              _context.next = 3;
+              return this.preferenceRepository.setUsers2CPreferences(hostName, scoredPreferences);
+            case 3:
+              return _context.abrupt("return", scoredPreferences);
+            case 4:
+            case "end":
+              return _context.stop();
+          }
+        }, _callee, this);
       }));
-      // store
-      this.preferenceRepository.setUsers2CPrefs(hostName, scoredPreferences);
-      return scoredPreferences;
-    }
-
+      function initUsersPreferences(_x) {
+        return _initUsersPreferences.apply(this, arguments);
+      }
+      return initUsersPreferences;
+    }()
     /**
      *
      * @param {String} hostName
@@ -20095,21 +20119,22 @@ var PreferenceManager = /*#__PURE__*/function () {
      * @param {ScoredPreferences} sitesScoredPreferences
      * @returns ScoredPreferences
      */
+    )
   }, {
     key: "getUsersPreferences",
     value: (function () {
-      var _getUsersPreferences = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee(hostName, is2C, sitesScoredPreferences) {
+      var _getUsersPreferences = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee2(hostName, is2C, sitesScoredPreferences) {
         var modified, scoredPreferences, requiredConsentKeys, actualConsentKeys;
-        return _regeneratorRuntime().wrap(function _callee$(_context) {
-          while (1) switch (_context.prev = _context.next) {
+        return _regeneratorRuntime().wrap(function _callee2$(_context2) {
+          while (1) switch (_context2.prev = _context2.next) {
             case 0:
               modified = false;
-              _context.next = 3;
+              _context2.next = 3;
               return this.preferenceRepository.getUsersPreferences(hostName, is2C);
             case 3:
-              scoredPreferences = _context.sent;
+              scoredPreferences = _context2.sent;
               if (scoredPreferences) {
-                _context.next = 6;
+                _context2.next = 6;
                 break;
               }
               throw new Error('No User Preferences for host: ', hostName);
@@ -20126,54 +20151,60 @@ var PreferenceManager = /*#__PURE__*/function () {
               }
               if (modified) {
                 // UPDATE REPO
-                is2C ? this.preferenceRepository.setUsers2CPrefs(hostName, scoredPreferences) : this.preferenceRepository.setUsers3CPrefs(hostName, scoredPreferences);
+                is2C ? this.preferenceRepository.setUsers2CPreferences(hostName, scoredPreferences) : this.preferenceRepository.setUsers3CPreferences(hostName, scoredPreferences);
               }
-              return _context.abrupt("return", scoredPreferences);
+              return _context2.abrupt("return", scoredPreferences);
             case 12:
-            case "end":
-              return _context.stop();
-          }
-        }, _callee, this);
-      }));
-      function getUsersPreferences(_x, _x2, _x3) {
-        return _getUsersPreferences.apply(this, arguments);
-      }
-      return getUsersPreferences;
-    }())
-  }, {
-    key: "createUsers3CPreferences",
-    value: function () {
-      var _createUsers3CPreferences = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee2(hostname, costResolutions) {
-        var is2C, prefs;
-        return _regeneratorRuntime().wrap(function _callee2$(_context2) {
-          while (1) switch (_context2.prev = _context2.next) {
-            case 0:
-              is2C = true;
-              _context2.next = 3;
-              return this.preferenceRepository.getUsersPreferences(hostname, is2C);
-            case 3:
-              prefs = _context2.sent;
-              if (prefs) {
-                _context2.next = 6;
-                break;
-              }
-              throw new Error('No User Preferences for host: ', hostname);
-            case 6:
-              // todo: remove test code
-              // prefs.setContent(new Issue())
-
-              prefs.setCost(new _models_scored_preferences_js__WEBPACK_IMPORTED_MODULE_2__.Issue().setRelevance(0.4).setResolutions(costResolutions));
-              prefs.consent.setRelevance(0.2);
-              prefs.content.setRelevance(0.4);
-              this.preferenceRepository.setUsers3CPrefs(hostname, prefs);
-              return _context2.abrupt("return", prefs);
-            case 11:
             case "end":
               return _context2.stop();
           }
         }, _callee2, this);
       }));
-      function createUsers3CPreferences(_x4, _x5) {
+      function getUsersPreferences(_x2, _x3, _x4) {
+        return _getUsersPreferences.apply(this, arguments);
+      }
+      return getUsersPreferences;
+    }()
+    /**
+     *
+     * @param {String} hostname
+     * @param {Object} costResolutions {0:1, ..., 9:0} decimal resolutioons as seen in ScoredPrefs
+     * @returns
+     */
+    )
+  }, {
+    key: "createUsers3CPreferences",
+    value: (function () {
+      var _createUsers3CPreferences = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee3(hostname, costResolutions) {
+        var is2C, prefs;
+        return _regeneratorRuntime().wrap(function _callee3$(_context3) {
+          while (1) switch (_context3.prev = _context3.next) {
+            case 0:
+              is2C = true;
+              _context3.next = 3;
+              return this.preferenceRepository.getUsersPreferences(hostname, is2C);
+            case 3:
+              prefs = _context3.sent;
+              if (prefs) {
+                _context3.next = 6;
+                break;
+              }
+              throw new Error('No User Preferences for host: ', hostname);
+            case 6:
+              prefs.setCost(new _models_scored_preferences_js__WEBPACK_IMPORTED_MODULE_2__.Issue().setRelevance(0.4).setResolutions(costResolutions));
+              prefs.consent.setRelevance(0.2);
+              prefs.content.setRelevance(0.4);
+              _context3.next = 11;
+              return this.preferenceRepository.setUsers3CPreferences(hostname, prefs);
+            case 11:
+              return _context3.abrupt("return", prefs);
+            case 12:
+            case "end":
+              return _context3.stop();
+          }
+        }, _callee3, this);
+      }));
+      function createUsers3CPreferences(_x5, _x6) {
         return _createUsers3CPreferences.apply(this, arguments);
       }
       return createUsers3CPreferences;
@@ -20184,26 +20215,27 @@ var PreferenceManager = /*#__PURE__*/function () {
      * @param {Boolean} is2C
      * @returns ScoredPreferences
      */
+    )
   }, {
     key: "getSitesPreferences",
     value: (function () {
-      var _getSitesPreferences = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee3(hostName, is2C) {
+      var _getSitesPreferences = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee4(hostName, is2C) {
         var scoredPreferences;
-        return _regeneratorRuntime().wrap(function _callee3$(_context3) {
-          while (1) switch (_context3.prev = _context3.next) {
+        return _regeneratorRuntime().wrap(function _callee4$(_context4) {
+          while (1) switch (_context4.prev = _context4.next) {
             case 0:
-              _context3.next = 2;
+              _context4.next = 2;
               return this.preferenceRepository.getSitesPreferences(hostName, is2C);
             case 2:
-              scoredPreferences = _context3.sent;
-              return _context3.abrupt("return", scoredPreferences);
+              scoredPreferences = _context4.sent;
+              return _context4.abrupt("return", scoredPreferences);
             case 4:
             case "end":
-              return _context3.stop();
+              return _context4.stop();
           }
-        }, _callee3, this);
+        }, _callee4, this);
       }));
-      function getSitesPreferences(_x6, _x7) {
+      function getSitesPreferences(_x7, _x8) {
         return _getSitesPreferences.apply(this, arguments);
       }
       return getSitesPreferences;
@@ -20217,19 +20249,19 @@ var PreferenceManager = /*#__PURE__*/function () {
   }, {
     key: "setSitesPreferences",
     value: (function () {
-      var _setSitesPreferences = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee4(hostName, preferences) {
-        return _regeneratorRuntime().wrap(function _callee4$(_context4) {
-          while (1) switch (_context4.prev = _context4.next) {
+      var _setSitesPreferences = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee5(hostName, preferences) {
+        return _regeneratorRuntime().wrap(function _callee5$(_context5) {
+          while (1) switch (_context5.prev = _context5.next) {
             case 0:
-              _context4.next = 2;
+              _context5.next = 2;
               return this.preferenceRepository.setSitesPreferences(hostName, preferences);
             case 2:
             case "end":
-              return _context4.stop();
+              return _context5.stop();
           }
-        }, _callee4, this);
+        }, _callee5, this);
       }));
-      function setSitesPreferences(_x8, _x9) {
+      function setSitesPreferences(_x9, _x10) {
         return _setSitesPreferences.apply(this, arguments);
       }
       return setSitesPreferences;
@@ -20525,9 +20557,9 @@ var PreferenceRepository = /*#__PURE__*/function () {
       return getSitesPreferences;
     }())
   }, {
-    key: "setUsers2CPrefs",
+    key: "setUsers2CPreferences",
     value: function () {
-      var _setUsers2CPrefs = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee3(hostname, scoredPreferences) {
+      var _setUsers2CPreferences = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee3(hostname, scoredPreferences) {
         var storageData, prefs;
         return _regeneratorRuntime().wrap(function _callee3$(_context3) {
           while (1) switch (_context3.prev = _context3.next) {
@@ -20548,47 +20580,42 @@ var PreferenceRepository = /*#__PURE__*/function () {
           }
         }, _callee3);
       }));
-      function setUsers2CPrefs(_x5, _x6) {
-        return _setUsers2CPrefs.apply(this, arguments);
+      function setUsers2CPreferences(_x5, _x6) {
+        return _setUsers2CPreferences.apply(this, arguments);
       }
-      return setUsers2CPrefs;
+      return setUsers2CPreferences;
     }()
   }, {
-    key: "setUsers3CPrefs",
+    key: "setUsers3CPreferences",
     value: function () {
-      var _setUsers3CPrefs = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee4(hostname, scoredPreferences) {
+      var _setUsers3CPreferences = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee4(hostname, scoredPreferences) {
         var storageData, prefs, pref;
         return _regeneratorRuntime().wrap(function _callee4$(_context4) {
           while (1) switch (_context4.prev = _context4.next) {
             case 0:
-              console.log('CREATING 3C prefs for HOST', hostname, scoredPreferences);
-              // const storageData = await browser.storage.local.get("user_preferences");
-              // const prefs = storageData.user_preferences || {}; // If proposals object doesn't exist, initialize it as an empty object
-              // const pref = prefs[hostName] || null;
-              // console.log(pref);
-              _context4.next = 3;
+              _context4.next = 2;
               return browser.storage.local.get('user_preferences');
-            case 3:
+            case 2:
               storageData = _context4.sent;
               prefs = storageData.user_preferences || {}; // If proposals object doesn't exist, initialize it as an empty object
               console.log('PUSH 3C USER PREFS', scoredPreferences, 'into', prefs[hostname]);
               pref = prefs[hostname] || null;
               pref === null || pref === void 0 || pref.push(scoredPreferences);
               console.log('RESULTING', pref, 'IN', prefs[hostname]);
-              _context4.next = 11;
+              _context4.next = 10;
               return browser.storage.local.set({
                 user_preferences: prefs
               });
-            case 11:
+            case 10:
             case "end":
               return _context4.stop();
           }
         }, _callee4);
       }));
-      function setUsers3CPrefs(_x7, _x8) {
-        return _setUsers3CPrefs.apply(this, arguments);
+      function setUsers3CPreferences(_x7, _x8) {
+        return _setUsers3CPreferences.apply(this, arguments);
       }
-      return setUsers3CPrefs;
+      return setUsers3CPreferences;
     }()
     /**
      *
@@ -20625,59 +20652,7 @@ var PreferenceRepository = /*#__PURE__*/function () {
       return setSitesPreferences;
     }())
   }]);
-}(); // export default class PreferenceRepository {
-//   constructor () {
-//     this.sitesPreferences = new Map()
-//     this.usersPreferences = new Map()
-//   }
-//   /**
-//    *
-//    * @param {String} hostName
-//    * @param {Boolean} is2C
-//    * @returns {ScoredPreferences | null}
-//    */
-//   getUsersPreferences (hostName, is2C) {
-//     const pref = this.usersPreferences.get(hostName)
-//     console.log(' REPO: pref: ', pref, ' of host ', hostName)
-//     if (!pref) return null
-//     if (is2C) {
-//       return pref[0]
-//     } else {
-//       return pref[1] || null
-//     }
-//   }
-//   /**
-//    *
-//    * @param {String} hostName
-//    * @param {Boolean} is2C
-//    * @returns {ScoredPreferences | null}
-//    */
-//   getSitesPreferences (hostName, is2C) {
-//     const pref = this.sitesPreferences.get(hostName)
-//     if (!pref) return null
-//     if (is2C) {
-//       return pref[0]
-//     } else {
-//       return pref[1] || null
-//     }
-//   }
-//   setUsers2CPrefs (hostname, scoredPreferences) {
-//     this.usersPreferences.set(hostname, [scoredPreferences])
-//   }
-//   setUsers3CPrefs (hostname, scoredPreferences) {
-//     const temp = this.usersPreferences.get(hostname)
-//     this.usersPreferences.set(hostname, [temp[0], scoredPreferences])
-//   }
-//   /**
-//    *
-//    * @param {String} hostName
-//    * @param {[ScoredPreferences]} scoredPreferences
-//    */
-//   setSitesPreferences (hostName, scoredPreferences) {
-//     this.sitesPreferences.set(hostName, scoredPreferences)
-//     console.log(this.sitesPreferences)
-//   }
-// }
+}();
 
 
 /***/ }),
@@ -21439,8 +21414,7 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
 var MessageActions = {
   PROPOSAL_ACCEPTED: 1,
   GET_DATA: 2,
-  COST_PREFERENCES_RECEIVED: 3,
-  IMITATE_RELOAD: 4
+  COST_PREFERENCES_RECEIVED: 3
 };
 _init_dependencies_js__WEBPACK_IMPORTED_MODULE_3__.badgeTextManager.registerListeners();
 
@@ -21510,21 +21484,6 @@ function handleMessage(request, sender, sendResponse) {
           });
         });
       });
-      // {
-      //   const header = interceptor.handleUpdatedCostPreferences(
-      //     hostname,
-      //     request.resolutions
-      //   )
-      //   const headers = {
-      //     ADPC: header.toString()
-      //   }
-
-      //   getURL().then((url) => {
-      //     console.log('now fetching URL') // const url = new URL(details.url, details.originUrl)
-      //     fetch(url, { headers })
-      //   })
-      // }
-
       break;
     default:
       break;

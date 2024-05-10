@@ -1,4 +1,5 @@
 import Interceptor from '../../../src/background/domain/interceptor.js'
+import Consent from '../../../src/background/domain/models/consent.js'
 import Contract from '../../../src/background/domain/models/contract.js'
 import Header, { NegotiationStatus } from '../../../src/background/domain/models/header'
 import Proposal from '../../../src/background/domain/models/proposal.js'
@@ -11,18 +12,23 @@ describe('Interceptor.js', () => {
 
   beforeEach(() => {
     // Initialize a mock instance of PreferencesRepository
-    contractRepositoryMock = {}
+    contractRepositoryMock = {
+      getContract: jest.fn(),
+      setContract: jest.fn()
+    }
     proposalRepositoryMock = {
       setProposal: jest.fn(),
       getProposal: jest.fn()
     }
     preferenceManagerMock = {
-      createUsers3CPreferences: jest.fn()
+      createUsers3CPreferences: jest.fn(),
+      initUsersPreferences: jest.fn()
     }
 
     negotiatorMock = {
       prepareCounteroffer: jest.fn(),
-      couldBeAttractiveForUser: jest.fn()
+      couldBeAttractiveForUser: jest.fn(),
+      prepareInitialOffer: jest.fn()
     }
 
     // Create an instance of PreferenceManager with the mock repository
@@ -33,8 +39,16 @@ describe('Interceptor.js', () => {
       // Arrange
 
       const hostname = 'example.com'
-      const resolutions = { analytics: 1, marketing: 5, personalizedAds: 3 }
-      preferenceManagerMock.createUsers3CPreferences.mockReturnValue('prefs')
+      // keys are cost resolutions e.g. 0 is 0 EUR, value is grade (german 1 best, 6 worst)
+      const resolutions = {
+        0: 6,
+        2: 5,
+        4: 4,
+        9: 3,
+        10: 2,
+        20: 1
+      }
+      preferenceManagerMock.createUsers3CPreferences.mockResolvedValue('prefs')
 
       const cut = new Interceptor(contractRepositoryMock, proposalRepositoryMock, negotiatorMock, preferenceManagerMock)
       // Act
@@ -47,40 +61,12 @@ describe('Interceptor.js', () => {
       expect(
         preferenceManagerMock.createUsers3CPreferences
       ).toHaveBeenCalledWith(hostname, {
-        analytics: 0.1111111111111111,
-        marketing: 0.5555555555555556,
-        personalizedAds: 0.3333333333333333
-      })
-      expect(result).toBeInstanceOf(Header)
-      expect(result.status).toBe(NegotiationStatus.EXCHANGE)
-      expect(result.preferences).toBe('prefs') // Check if the preferences are set correctly
-    })
-    it('all same grade results in equal distributions', async () => {
-      // Arrange
-
-      const hostname = 'example.com'
-      const resolutions = { analytics: 1, marketing: 1, personalizedAds: 1 }
-      preferenceManagerMock.createUsers3CPreferences.mockReturnValue('prefs')
-
-      const cut = new Interceptor(
-        contractRepositoryMock,
-        proposalRepositoryMock,
-        negotiatorMock,
-        preferenceManagerMock
-      )
-      // Act
-      const result = await cut.handleUpdatedCostPreferences(
-        hostname,
-        resolutions
-      )
-
-      // Assert
-      expect(
-        preferenceManagerMock.createUsers3CPreferences
-      ).toHaveBeenCalledWith(hostname, {
-        analytics: 0.3333333333333333,
-        marketing: 0.3333333333333333,
-        personalizedAds: 0.3333333333333333
+        0: 1,
+        2: 0.8,
+        4: 0.6,
+        9: 0.4,
+        10: 0.2,
+        20: 0
       })
       expect(result).toBeInstanceOf(Header)
       expect(result.status).toBe(NegotiationStatus.EXCHANGE)
@@ -88,11 +74,37 @@ describe('Interceptor.js', () => {
     })
   })
 
+  describe('onBeforeSendHeaders', () => {
+    test('IF a contract was found THEN return null', async () => {
+      contractRepositoryMock.getContract.mockResolvedValue(
+        new Contract()
+      )
+
+      const cut = new Interceptor(contractRepositoryMock)
+
+      const actual = await cut.onBeforeSendHeaders('hostname1')
+
+      expect(actual).toBe(null)
+    })
+    test('IF no contract was found THEN return modified header and store initial contract', async () => {
+      contractRepositoryMock.getContract.mockResolvedValue(null)
+      preferenceManagerMock.initUsersPreferences.mockResolvedValue(true)
+      negotiatorMock.prepareInitialOffer.mockReturnValue(new Header().setStatus(NegotiationStatus.EXCHANGE).setConsent(new Consent()))
+      contractRepositoryMock.setContract.mockResolvedValue(true)
+
+      const cut = new Interceptor(contractRepositoryMock, null, negotiatorMock, preferenceManagerMock)
+
+      const actual = await cut.onBeforeSendHeaders('hostname1')
+
+      expect(actual).toEqual(new Header().setStatus(NegotiationStatus.EXCHANGE).setConsent(new Consent()))
+    })
+  })
+
   describe('onHeadersReceived', () => {
     test('If status is exchange, then return counter offer', async () => {
       const inputHeader = new Header().setStatus(NegotiationStatus.EXCHANGE)
 
-      negotiatorMock.prepareCounteroffer.mockReturnValue(
+      negotiatorMock.prepareCounteroffer.mockResolvedValue(
         new Header().setStatus(NegotiationStatus.NEGOTIATION)
       )
 
@@ -111,9 +123,9 @@ describe('Interceptor.js', () => {
     })
 
     test('IF status is negotiation AND offer could be atrractive, THEN return a proposal', async () => {
-      const inputHeader = new Header().setStatus(NegotiationStatus.NEGOTIATION).setConsent('blabla')
+      const inputHeader = new Header().setStatus(NegotiationStatus.NEGOTIATION).setConsent('blabla').setContent(60)
 
-      negotiatorMock.prepareCounteroffer.mockReturnValue(
+      negotiatorMock.prepareCounteroffer.mockResolvedValue(
         new Header().setStatus(NegotiationStatus.NEGOTIATION)
       )
       negotiatorMock.couldBeAttractiveForUser.mockReturnValue(true)
@@ -126,7 +138,7 @@ describe('Interceptor.js', () => {
 
       const result = await cut.onHeadersReceived(inputHeader, 'hostname1')
 
-      expect(result).toEqual(new Proposal().setHostName('hostname1').setConsent('blabla').setUserHasAccepted(false))
+      expect(result).toEqual(new Proposal().setHostName('hostname1').setConsent('blabla').setUserHasAccepted(false).setContent(60).setCost(0))
       expect(negotiatorMock.couldBeAttractiveForUser).toHaveBeenCalledWith(inputHeader, 'hostname1')
       expect(negotiatorMock.prepareCounteroffer).toHaveBeenCalledTimes(0)
     })
@@ -136,7 +148,7 @@ describe('Interceptor.js', () => {
         .setStatus(NegotiationStatus.NEGOTIATION)
         .setConsent('blabla')
 
-      negotiatorMock.prepareCounteroffer.mockReturnValue(
+      negotiatorMock.prepareCounteroffer.mockResolvedValue(
         new Header().setStatus(NegotiationStatus.NEGOTIATION)
       )
       negotiatorMock.couldBeAttractiveForUser.mockReturnValue(false)
@@ -161,8 +173,9 @@ describe('Interceptor.js', () => {
       const inputHeader = new Header()
         .setStatus(NegotiationStatus.ACCEPTED)
         .setConsent('blabla')
+        .setContent(60)
 
-      proposalRepositoryMock.getProposal.mockReturnValue(null)
+      proposalRepositoryMock.getProposal.mockResolvedValue(null)
 
       const cut = new Interceptor(
         contractRepositoryMock,
@@ -176,6 +189,8 @@ describe('Interceptor.js', () => {
         new Proposal()
           .setHostName('hostname1')
           .setConsent('blabla')
+          .setContent(60)
+          .setCost(0)
           .setUserHasAccepted(false)
       )
       expect(negotiatorMock.couldBeAttractiveForUser).toHaveBeenCalledTimes(0)
@@ -185,8 +200,11 @@ describe('Interceptor.js', () => {
       const inputHeader = new Header()
         .setStatus(NegotiationStatus.ACCEPTED)
         .setConsent('blabla')
+        .setContent(60)
 
-      proposalRepositoryMock.getProposal.mockReturnValue(new Proposal().setUserHasAccepted(false))
+      proposalRepositoryMock.getProposal.mockResolvedValue(
+        new Proposal().setUserHasAccepted(false)
+      )
 
       const cut = new Interceptor(
         contractRepositoryMock,
@@ -200,6 +218,8 @@ describe('Interceptor.js', () => {
         new Proposal()
           .setHostName('hostname1')
           .setConsent('blabla')
+          .setContent(60)
+          .setCost(0)
           .setUserHasAccepted(false)
       )
       expect(negotiatorMock.couldBeAttractiveForUser).toHaveBeenCalledTimes(0)
@@ -209,8 +229,9 @@ describe('Interceptor.js', () => {
       const inputHeader = new Header()
         .setStatus(NegotiationStatus.ACCEPTED)
         .setConsent('blabla')
+        .setContent(60)
 
-      proposalRepositoryMock.getProposal.mockReturnValue(
+      proposalRepositoryMock.getProposal.mockResolvedValue(
         new Proposal().setUserHasAccepted(true)
       )
 
@@ -226,6 +247,8 @@ describe('Interceptor.js', () => {
         new Contract()
           .setHostName('hostname1')
           .setConsent('blabla')
+          .setContent(60)
+          .setCost(0)
       )
       expect(negotiatorMock.couldBeAttractiveForUser).toHaveBeenCalledTimes(0)
       expect(negotiatorMock.prepareCounteroffer).toHaveBeenCalledTimes(0)

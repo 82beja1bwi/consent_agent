@@ -94,17 +94,17 @@ describe('Calculator', () => {
       expect(actual([true, false, false], 1, 1)).toEqual(86)
     })
   })
+
   describe('initUsersScoringFunction', () => {
     test('If wrong data model then throw Error', () => {
-      const scoredPreferences = { }
+      const scoredPreferences = {}
       const cut = new Calculator()
       expect(() => {
         cut.calcUsersScoringFunction(scoredPreferences)
-      }).toThrow(new Error('Preferences must be in data model ScoredPreferences'))
+      }).toThrow(
+        new Error('Preferences must be in data model ScoredPreferences')
+      )
     })
-  })
-
-  describe('initUsersScoringFunction', () => {
     test('if not enough bools provded, then throw error', () => {
       const scoredPreferences = new ScoredPreferences()
         .setConsent(
@@ -223,7 +223,7 @@ describe('Calculator', () => {
       )
 
       expect(
-        cut.calcNashBestContracts(
+        cut.calcNashContracts(
           usersScoredPreferences,
           sitesScoredPreferences,
           usersScoringFunction,
@@ -307,7 +307,7 @@ describe('Calculator', () => {
       )
 
       expect(
-        cut.calcNashBestContracts(
+        cut.calcNashContracts(
           usersScoredPreferences,
           sitesScoredPreferences,
           usersScoringFunction,
@@ -392,7 +392,7 @@ describe('Calculator', () => {
       expectedConsent.personalizedAds = false
 
       expect(
-        cut.calcNashBestContracts(
+        cut.calcNashContracts(
           usersScoredPreferences,
           sitesScoredPreferences,
           usersScoringFunction,
@@ -471,7 +471,7 @@ describe('Calculator', () => {
       )
 
       expect(
-        cut.calcNashBestContracts(
+        cut.calcNashContracts(
           usersScoredPreferences,
           sitesScoredPreferences,
           usersScoringFunction,

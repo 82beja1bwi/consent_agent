@@ -33,7 +33,7 @@ export default class Interceptor {
     let proposals = null
 
     if (proposal) {
-      const is2C = !!((!proposal.cost || proposal?.cost === 0))
+      const is2C = !!(!proposal.cost || proposal?.cost === 0)
       proposals = await this.negotiator.createSimilarAlternatives(
         3,
         is2C,
@@ -51,21 +51,33 @@ export default class Interceptor {
     return { proposals, contract, costResolutions }
   }
 
+  /**
+   * maps the UI scale (likert-like) to a decimal scale as seen in ScoredPreferences
+   *
+   * likert scale from 1 worst to 6 best
+   *
+   * from {0 Eur: 6, 1 Eur: 5,..., 20 Eur: 1}
+   * to {0 Eur: 1, 1 Eur 0.2, ...}
+   *
+   * @param {String} hostname mail.google.com
+   * @param {Object} resolutions {0: 6, 1: 5,...} key is EUR, value is score on likert (6 best, 1 worst)
+   * @returns Header ...{0: 1, 1: 0.8, ...}
+   */
   async handleUpdatedCostPreferences (hostname, resolutions) {
-    // resolutions from likert points to decimals
-    // from {analytics: 1, marketing: 6,...}
-    // to {analytics: 0.5, marketing 0.1, ...}
+    // read like
+    // 'likert score 1 results in a preference score of 0' -> least desired
+    // 'likert score 6 results in a preference score of 1' -> most desired
+    const mapping = {
+      1: 0,
+      2: 0.2,
+      3: 0.4,
+      4: 0.6,
+      5: 0.8,
+      6: 1
+    }
 
-    const points = Object.values(resolutions)
-
-    // Calculate the total sum of grades
-    const totalGrades = points.reduce((sum, grade) => sum + parseInt(grade), 0)
-
-    // Calculate the percentage for each option
-    const keys = Object.keys(resolutions)
-    for (let i = 0; i < keys.length; i++) {
-      const key = keys[i]
-      resolutions[key] = points[i] / totalGrades
+    for (const key in resolutions) {
+      resolutions[key] = mapping[resolutions[key]]
     }
 
     const prefs = await this.preferenceManager.createUsers3CPreferences(
@@ -105,7 +117,7 @@ export default class Interceptor {
     if (!contract) {
       console.log('No contract found for host:', hostName)
       // Construct initial header
-      this.preferenceManager.initUsersPreferences(hostName)
+      await this.preferenceManager.initUsersPreferences(hostName)
 
       header = this.negotiator.prepareInitialOffer()
 
@@ -135,9 +147,11 @@ export default class Interceptor {
         result = await this.negotiator.prepareCounteroffer(header, hostName)
         break
       case NegotiationStatus.NEGOTIATION:
-        { const couldBeAttractive = await this.negotiator.couldBeAttractiveForUser(header, hostName)
+        {
+          const couldBeAttractive =
+            await this.negotiator.couldBeAttractiveForUser(header, hostName)
           if (couldBeAttractive) {
-          // UI: present to user
+            // UI: present to user
             result = new Proposal()
               .setHostName(hostName)
               .setCost(header.cost)
@@ -145,8 +159,11 @@ export default class Interceptor {
               .setContent(header.content)
               .setUserHasAccepted(false)
           } else {
-          // calculate counter offer
-            result = await this.negotiator.prepareCounteroffer(header, hostName)
+            // calculate counter offer
+            result = await this.negotiator.prepareCounteroffer(
+              header,
+              hostName
+            )
           }
         }
         break

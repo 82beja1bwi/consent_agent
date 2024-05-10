@@ -112,4 +112,48 @@ describe('Consent', () => {
       expect(actual).toEqual(new Consent().setIdentification(true))
     })
   })
+
+  describe('fromObject', () => {
+    test('should create an instance from a given object', () => {
+      const object = {
+        analytics: true,
+        marketing: false,
+        personalizedContent: true,
+        personalizedAds: false,
+        externalContent: true,
+        identification: false
+      }
+
+      // Expected Consent instance
+      const expectedConsent = new Consent()
+        .setAnalytics(true)
+        .setMarketing(false)
+        .setPersonalizedContent(true)
+        .setPersonalizedAds(false)
+        .setExternalContent(true)
+        .setIdentification(false)
+
+      // Call the fromObject method
+      const result = Consent.fromObject(object)
+
+      // Assertions
+      expect(result).toEqual(expectedConsent)
+    })
+    test('returns a Consent instance with all properties set to false when input object is null', () => {
+      // Call the fromObject method with null input
+      const result = Consent.fromObject({})
+
+      // Expected Consent instance with all properties set to false
+      const expectedConsent = new Consent()
+        .setAnalytics(false)
+        .setMarketing(false)
+        .setPersonalizedContent(false)
+        .setPersonalizedAds(false)
+        .setExternalContent(false)
+        .setIdentification(false)
+
+      // Assertions
+      expect(result).toEqual(expectedConsent)
+    })
+  })
 })

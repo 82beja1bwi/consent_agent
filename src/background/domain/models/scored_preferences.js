@@ -75,6 +75,11 @@ export default class ScoredPreferences {
     return btoa(JSON.stringify(this))
   }
 
+  /**
+   *
+   * @param {*} json a JSON.parse(string)
+   * @returns
+   */
   static fromJSON (json) {
     const scoredPreferences = new ScoredPreferences(
       new Issue(),

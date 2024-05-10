@@ -183,17 +183,6 @@ function populateCostPreferenceSelection (costResolutions) {
 
   const preferencesContainer = document.getElementById('preferencesContainer')
 
-  // Create and configure the subtitle title
-  /* const subtitle = document.createElement('h3')
-  subtitle.textContent = 'Cost Preferences'
-
-  const explanation = document.createElement('p')
-  explanation.textContent = 'How much would you be willing to pay for this site? Please assign each cost resolution (in Euro) a school grade (1 is best, 6 is worst)'
-
-  // Insert the subtitle title before the options container
-  optionsContainer.appendChild(subtitle)
-  optionsContainer.appendChild(explanation) */
-
   const table = document.createElement('table')
   const tableHead = document.createElement('thead')
   const tableRow = document.createElement('tr')

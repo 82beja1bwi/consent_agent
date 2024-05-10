@@ -34,7 +34,13 @@ describe('Header', () => {
               })
             )
         )
-        .setConsent(new Consent(true, true, true, true, true, true))
+        .setConsent(new Consent()
+          .setAnalytics(true)
+          .setMarketing(true)
+          .setPersonalizedContent(true)
+          .setPersonalizedAds(true)
+          .setExternalContent(true)
+          .setIdentification(true))
         .setCost(2)
         .setContent(90)
 
@@ -56,19 +62,25 @@ describe('Header', () => {
   })
   describe('fromString', () => {
     test('should create the instance from header string', () => {
-      const prefs2C = 'eyJjb3N0Ijp7InJlbGV2YW5jZSI6MC4yLCJyZXNvbHV0aW9ucyI6eyI1MCI6MTAsIjgwIjoyMCwiMTAwIjozMH19LCJjb25zZW50Ijp7InJlbGV2YW5jZSI6MC4zLCJyZXNvbHV0aW9ucyI6eyJhbmFseXRpY3MiOjEwLCJtYXJrZXRpbmciOjEwLCJwZXJzb25hbGl6ZWRDb250ZW50IjoxMCwicGVyc29uYWxpemVkQWRzIjoxMCwiZXh0ZXJuYWxDb250ZW50IjoxMCwiaWRlbnRpZmljYXRpb24iOjV9fSwiY29udGVudCI6eyJyZWxldmFuY2UiOjAuNSwicmVzb2x1dGlvbnMiOnsiMi45OSI6MjAsIjUuNDkiOjEwLCI3LjE5Ijo1fX19'
-      const prefs3C = prefs2C // here very simple normally differen
-      const input = `status=exchange preferences=${prefs2C} ${prefs3C} cost=2 consent=rejectAll acceptAll analytics marketing personalizedContent personalizedAds externalContent identification content=90`
-      const actual = Header.fromString(input)
-
-      const expectedPrefs = new ScoredPreferences()
-        .setCost(
-          new Issue().setRelevance(0.2).setResolutions({
-            100: 30,
-            80: 20,
-            50: 10
+      const pref2C = new ScoredPreferences()
+        .setConsent(
+          new Issue().setRelevance(0.5).setResolutions({
+            analytics: 10,
+            marketing: 10,
+            personalizedContent: 10,
+            personalizedAds: 10,
+            externalContent: 10,
+            identification: 5
           })
         )
+        .setContent(
+          new Issue().setRelevance(0.5).setResolutions({
+            2.99: 20,
+            5.49: 10,
+            7.19: 5
+          })
+        )
+      const pref3C = new ScoredPreferences()
         .setConsent(
           new Issue().setRelevance(0.3).setResolutions({
             analytics: 10,
@@ -86,32 +98,58 @@ describe('Header', () => {
             7.19: 5
           })
         )
+        .setCost(
+          new Issue().setRelevance(0.2).setResolutions({
+            100: 30,
+            80: 20,
+            50: 10
+          })
+        )
+      const prefs = btoa(JSON.stringify([pref2C, pref3C]))
+      const input = `status=exchange preferences=${prefs} cost=2 consent=analytics marketing personalizedContent personalizedAds externalContent identification content=90`
+
+      const actual = Header.fromString(input)
+
       expect(actual).toEqual(
         new Header()
           .setStatus('exchange')
-          .setPreferences(
-            [expectedPrefs, expectedPrefs]
+          .setPreferences([
+            pref2C.setCost(new Issue()),
+            pref3C
+          ])
+          .setConsent(
+            new Consent()
+              .setAnalytics(true)
+              .setMarketing(true)
+              .setPersonalizedContent(true)
+              .setPersonalizedAds(true)
+              .setExternalContent(true)
+              .setIdentification(true)
           )
-          .setConsent(new Consent(true, true, true, true, true, true))
           .setCost(2)
           .setContent(90)
       )
     })
     test('No consent, cost, content provided. Header has only status, rest null', () => {
-      const prefs2C =
-        'eyJjb3N0Ijp7InJlbGV2YW5jZSI6MC4yLCJyZXNvbHV0aW9ucyI6eyI1MCI6MTAsIjgwIjoyMCwiMTAwIjozMH19LCJjb25zZW50Ijp7InJlbGV2YW5jZSI6MC4zLCJyZXNvbHV0aW9ucyI6eyJhbmFseXRpY3MiOjEwLCJtYXJrZXRpbmciOjEwLCJwZXJzb25hbGl6ZWRDb250ZW50IjoxMCwicGVyc29uYWxpemVkQWRzIjoxMCwiZXh0ZXJuYWxDb250ZW50IjoxMCwiaWRlbnRpZmljYXRpb24iOjV9fSwiY29udGVudCI6eyJyZWxldmFuY2UiOjAuNSwicmVzb2x1dGlvbnMiOnsiMi45OSI6MjAsIjUuNDkiOjEwLCI3LjE5Ijo1fX19'
-      const prefs3C = prefs2C // here very simple normally differen
-      const input = `status=exchange preferences=${prefs2C} ${prefs3C}`
-      const actual = Header.fromString(input)
-
-      const expectedPrefs = new ScoredPreferences()
-        .setCost(
-          new Issue().setRelevance(0.2).setResolutions({
-            100: 30,
-            80: 20,
-            50: 10
+      const pref2C = new ScoredPreferences()
+        .setConsent(
+          new Issue().setRelevance(0.5).setResolutions({
+            analytics: 10,
+            marketing: 10,
+            personalizedContent: 10,
+            personalizedAds: 10,
+            externalContent: 10,
+            identification: 5
           })
         )
+        .setContent(
+          new Issue().setRelevance(0.5).setResolutions({
+            2.99: 20,
+            5.49: 10,
+            7.19: 5
+          })
+        )
+      const pref3C = new ScoredPreferences()
         .setConsent(
           new Issue().setRelevance(0.3).setResolutions({
             analytics: 10,
@@ -129,13 +167,24 @@ describe('Header', () => {
             7.19: 5
           })
         )
+        .setCost(
+          new Issue().setRelevance(0.2).setResolutions({
+            100: 30,
+            80: 20,
+            50: 10
+          })
+        )
+      const prefs = btoa(JSON.stringify([pref2C, pref3C]))
+      const input = `status=exchange preferences=${prefs}`
+      const actual = Header.fromString(input)
+
       expect(actual).toEqual(
         new Header()
           .setStatus('exchange')
-          .setPreferences([expectedPrefs, expectedPrefs])
+          .setPreferences([pref2C.setCost(new Issue()), pref3C])
           .setConsent(null)
-          .setCost(null)
-          .setContent(null)
+          .setCost(0)
+          .setContent(0)
       )
     })
   })

@@ -72,20 +72,6 @@ function handleMessage (request, sender, sendResponse) {
             fetch(url, { headers })
           })
         )
-      // {
-      //   const header = interceptor.handleUpdatedCostPreferences(
-      //     hostname,
-      //     request.resolutions
-      //   )
-      //   const headers = {
-      //     ADPC: header.toString()
-      //   }
-
-      //   getURL().then((url) => {
-      //     console.log('now fetching URL') // const url = new URL(details.url, details.originUrl)
-      //     fetch(url, { headers })
-      //   })
-      // }
 
       break
     default:
