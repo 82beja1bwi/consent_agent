@@ -64,16 +64,17 @@ Upon http-responses containing the custom `ADPC` http-header, the following doma
 
 
 
-## Usage
-Before proceeding make sure you have installed the following
-- JavaScript (ES6)
-- npm (Node Package Manager)
+## Usage 
+
+**Firefox only!**
   
 1. Clone this repository to your local machine.
-2. Install and set up [webpack](https://webpack.js.org/) for bundling the project. 
+2. Install and set up [NodeJS](https://nodejs.org/en/download/package-manager/current).
 3. Install dependencies using `npm install`.
 4. Run `npm run build` to bundle the files and start the service. 
-5. (Firefox) manually upload the browser extension by navigating to `about:debugging#/runtime/this-firefox` in your Firefox browser.
+5. Open Firefox, navigate to `about:debugging#/runtime/this-firefox`.
+6. Click on 'Load Temporary Add-on'.
+7. Select dist folder of the cloned project and in the dist folder select the manifest file.
 
 ## Project Structure
 ### Main Folders and Files
